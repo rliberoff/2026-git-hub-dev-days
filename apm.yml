@@ -1,0 +1,35 @@
+name: cli-speckit-demo
+version: 1.0.0
+description: APM project for cli-speckit-demo
+author: Rodrigo Liberoff
+
+targets:
+  - vscode
+
+dependencies:
+  apm:
+    # Developer workflow, architecture, documentation grounding
+    - github/awesome-copilot/skills/azure-well-architected-review#5c1ce5f
+    - github/awesome-copilot/skills/cloud-design-patterns#f8c2b32
+    - github/awesome-copilot/skills/git-commit#e24be77
+    - github/awesome-copilot/skills/microsoft-docs#fb4eb04f
+    - github/awesome-copilot/skills/microsoft-code-reference#822d040
+
+    # Agents
+    - github/awesome-copilot/agents/Thinking-Beast-Mode.agent.md#9505d75
+
+    # Code writing, style, conventions and best practices
+    - .\apm\skills\coding-style-markdown\
+    - .\apm\skills\coding-style-terraform-azure\
+    - .\apm\skills\wow-conventional-commits\
+
+  mcp:
+    # Current Microsoft documentation and code samples; no authentication required.
+    - name: microsoft-learn
+      registry: false
+      transport: http
+      url: https://learn.microsoft.com/api/mcp
+
+includes: auto
+
+scripts: []

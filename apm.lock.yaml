@@ -1,0 +1,442 @@
+lockfile_version: '1'
+apm_version: 0.31.0
+dependencies:
+- repo_url: _local/coding-style-markdown
+  name: coding-style-markdown
+  version: unknown
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/coding-style-markdown
+  - .agents/skills/coding-style-markdown/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/coding-style-markdown/SKILL.md: sha256:b29ba1e21760e39d21dcced17ad62f39f6532615d630ee9cc23bcde20d3bc205
+  source: local
+  local_path: .\apm\skills\coding-style-markdown\
+- repo_url: _local/coding-style-terraform-azure
+  name: coding-style-terraform-azure
+  version: unknown
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/coding-style-terraform-azure
+  - .agents/skills/coding-style-terraform-azure/SKILL.md
+  - .agents/skills/coding-style-terraform-azure/references/app-configuration.md
+  - .agents/skills/coding-style-terraform-azure/references/azapi-provider.md
+  - .agents/skills/coding-style-terraform-azure/references/file-based-seeding.md
+  - .agents/skills/coding-style-terraform-azure/references/validation-patterns.md
+  deployed_file_hashes:
+    .agents/skills/coding-style-terraform-azure/SKILL.md: sha256:5c4da1c8dc129d1afc623cf715235e7701b34aa9ca17a1e53a054cf70e184604
+    .agents/skills/coding-style-terraform-azure/references/app-configuration.md: sha256:2f4e4d2dcf7381ce6eeb481f6072f158cd99b841d50f7878618ad38dc991212b
+    .agents/skills/coding-style-terraform-azure/references/azapi-provider.md: sha256:03c5087eab60c72a5e923b1290f3c26172844b06e879afdb4da888ed4ab57a72
+    .agents/skills/coding-style-terraform-azure/references/file-based-seeding.md: sha256:97957a6bd0eb6404fc0eb4a95bb8f58446eece9a0cea861b3c67526ce1a1c837
+    .agents/skills/coding-style-terraform-azure/references/validation-patterns.md: sha256:aac9566d9ffb8d2ce0badab0e987712ef196e5d3bbcd130cb49e80bb540574b3
+  source: local
+  local_path: .\apm\skills\coding-style-terraform-azure\
+- repo_url: _local/wow-conventional-commits
+  name: wow-conventional-commits
+  version: unknown
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wow-conventional-commits
+  - .agents/skills/wow-conventional-commits/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wow-conventional-commits/SKILL.md: sha256:4e412df26759976680065bfdfce2781fb9344819a92cf2230d1b4422ff94fefa
+  source: local
+  local_path: .\apm\skills\wow-conventional-commits\
+- repo_url: github/awesome-copilot
+  name: awesome-copilot-Thinking-Beast-Mode
+  host: github.com
+  resolved_commit: 9505d750de4c039ef7a9166f440a8e3ef12e2efa
+  resolved_ref: 9505d75
+  version: 1.0.0
+  virtual_path: agents/Thinking-Beast-Mode.agent.md
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .github/agents/Thinking-Beast-Mode.agent.md
+  deployed_file_hashes:
+    .github/agents/Thinking-Beast-Mode.agent.md: sha256:53f8b55fce98038d0b59d71146c439f363f5f6daf079237c37ed20e07711269d
+  content_hash: sha256:34c910c0f7f23298c644df32f0abad6cf6c792c7a6a30805785e680fa2b1b845
+- repo_url: github/awesome-copilot
+  name: azure-well-architected-review
+  host: github.com
+  resolved_commit: 5c1ce5f3bd3dbc305085a4de7884a9a4f541aef3
+  resolved_ref: 5c1ce5f
+  version: unknown
+  virtual_path: skills/azure-well-architected-review
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/azure-well-architected-review
+  - .agents/skills/azure-well-architected-review/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/azure-well-architected-review/SKILL.md: sha256:bac39e11c6f91cba8c65227986e27bd8f1c25c43680f24a737cb92cc1ac51a0a
+  content_hash: sha256:05bf13a08ae968d06a3885030be79dd54d86c53ec7e9ef720520b1298941ac8f
+- repo_url: github/awesome-copilot
+  name: cloud-design-patterns
+  host: github.com
+  resolved_commit: f8c2b3214033a1b6134bce9129b59cc5b0440b66
+  resolved_ref: f8c2b32
+  version: unknown
+  virtual_path: skills/cloud-design-patterns
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/cloud-design-patterns
+  - .agents/skills/cloud-design-patterns/SKILL.md
+  - .agents/skills/cloud-design-patterns/references/architecture-design.md
+  - .agents/skills/cloud-design-patterns/references/azure-service-mappings.md
+  - .agents/skills/cloud-design-patterns/references/best-practices.md
+  - .agents/skills/cloud-design-patterns/references/deployment-operational.md
+  - .agents/skills/cloud-design-patterns/references/event-driven.md
+  - .agents/skills/cloud-design-patterns/references/messaging-integration.md
+  - .agents/skills/cloud-design-patterns/references/performance.md
+  - .agents/skills/cloud-design-patterns/references/reliability-resilience.md
+  - .agents/skills/cloud-design-patterns/references/security.md
+  deployed_file_hashes:
+    .agents/skills/cloud-design-patterns/SKILL.md: sha256:69b0e14a0011137f7253f90b85745eba1710d8849710e3b5b677e3bf9dfe6320
+    .agents/skills/cloud-design-patterns/references/architecture-design.md: sha256:7f15eb5be03f196cddce230f178866f77e1cfc3548abd9650a1ac166fb3863e2
+    .agents/skills/cloud-design-patterns/references/azure-service-mappings.md: sha256:cdc52667d6b23d882afedeaf9229bfe352e03c6c8ac0a43526dc038d62b5f103
+    .agents/skills/cloud-design-patterns/references/best-practices.md: sha256:98cdfd5996dcedad39625efcdfe09578b8559d5c4b1fd6253c4d9797d0512af2
+    .agents/skills/cloud-design-patterns/references/deployment-operational.md: sha256:e9677c2163444d0619eead7f86b0fcdbd739bfd1745457ac26828a6d3c44efeb
+    .agents/skills/cloud-design-patterns/references/event-driven.md: sha256:f340c93b3730666cc6be2167d1b1533a78d020b811622274a8867844f019a74b
+    .agents/skills/cloud-design-patterns/references/messaging-integration.md: sha256:16b3a768c6fad4a33351c4791709b748edf6977c176104cdc9954c90167a0bd1
+    .agents/skills/cloud-design-patterns/references/performance.md: sha256:1d717c3d80860214dc66e2fa21f6f93845af10a19d50fe4a98a830a39c7a9d5d
+    .agents/skills/cloud-design-patterns/references/reliability-resilience.md: sha256:364ea09a4037c7329e2904ef279467d106e14e44cea7ae00afe998156fce6d37
+    .agents/skills/cloud-design-patterns/references/security.md: sha256:813a3f2ffea552cd1f599087d876784066c54d481297423808ebb856c3b32481
+  content_hash: sha256:99a94b073eb8551fe318e66ee51230efc95305f198fbd2438fc172441b5c94ea
+- repo_url: github/awesome-copilot
+  name: git-commit
+  host: github.com
+  resolved_commit: e24be77e6f203409cf99ab7d5a67e1540cb386d3
+  resolved_ref: e24be77
+  version: unknown
+  virtual_path: skills/git-commit
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/git-commit
+  - .agents/skills/git-commit/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/git-commit/SKILL.md: sha256:554d1a3c6d95f15bc1170160659ecdc9a9958b64f377f3988941b672c249b13f
+  content_hash: sha256:2607fc60629b82b257136dd2a7a373f0a4466c0b49df7746d845d59313c99b21
+- repo_url: github/awesome-copilot
+  name: microsoft-code-reference
+  host: github.com
+  resolved_commit: 822d0407def3f01367d09ce35855eb6d8e3ace7c
+  resolved_ref: 822d040
+  version: unknown
+  virtual_path: skills/microsoft-code-reference
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/microsoft-code-reference
+  - .agents/skills/microsoft-code-reference/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/microsoft-code-reference/SKILL.md: sha256:19f13822dd8674ac0a24787ac15472c9137d0db5b03750ba43ee9dcdac8ddd03
+  content_hash: sha256:2a86c1b1a876f777a8f99e0e27a9b2d5fa360352bd2dd396102e3110212dd296
+- repo_url: github/awesome-copilot
+  name: microsoft-docs
+  host: github.com
+  resolved_commit: fb4eb04fcbd30de50052b1155d81167393dfb5aa
+  resolved_ref: fb4eb04f
+  version: unknown
+  virtual_path: skills/microsoft-docs
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/microsoft-docs
+  - .agents/skills/microsoft-docs/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/microsoft-docs/SKILL.md: sha256:2c2e0b361eab0d0f2526cf8c3c5df63b996fcdd4c12ffccdccf08f8f8f1f1f9c
+  content_hash: sha256:e49127ff2162330ac79bfde9e7ed1297df15be9ade09164fdebfe697153fcc36
+deployments:
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/azure-well-architected-review
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/azure-well-architected-review
+  active_owner: github/awesome-copilot/skills/azure-well-architected-review
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/azure-well-architected-review/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/azure-well-architected-review
+  active_owner: github/awesome-copilot/skills/azure-well-architected-review
+  content_hash: sha256:bac39e11c6f91cba8c65227986e27bd8f1c25c43680f24a737cb92cc1ac51a0a
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:69b0e14a0011137f7253f90b85745eba1710d8849710e3b5b677e3bf9dfe6320
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/architecture-design.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:7f15eb5be03f196cddce230f178866f77e1cfc3548abd9650a1ac166fb3863e2
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/azure-service-mappings.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:cdc52667d6b23d882afedeaf9229bfe352e03c6c8ac0a43526dc038d62b5f103
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/best-practices.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:98cdfd5996dcedad39625efcdfe09578b8559d5c4b1fd6253c4d9797d0512af2
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/deployment-operational.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:e9677c2163444d0619eead7f86b0fcdbd739bfd1745457ac26828a6d3c44efeb
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/event-driven.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:f340c93b3730666cc6be2167d1b1533a78d020b811622274a8867844f019a74b
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/messaging-integration.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:16b3a768c6fad4a33351c4791709b748edf6977c176104cdc9954c90167a0bd1
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/performance.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:1d717c3d80860214dc66e2fa21f6f93845af10a19d50fe4a98a830a39c7a9d5d
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/reliability-resilience.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:364ea09a4037c7329e2904ef279467d106e14e44cea7ae00afe998156fce6d37
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/cloud-design-patterns/references/security.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/cloud-design-patterns
+  active_owner: github/awesome-copilot/skills/cloud-design-patterns
+  content_hash: sha256:813a3f2ffea552cd1f599087d876784066c54d481297423808ebb856c3b32481
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-markdown
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-markdown\
+  active_owner: .\apm\skills\coding-style-markdown\
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-markdown/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-markdown\
+  active_owner: .\apm\skills\coding-style-markdown\
+  content_hash: sha256:b29ba1e21760e39d21dcced17ad62f39f6532615d630ee9cc23bcde20d3bc205
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-terraform-azure
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-terraform-azure\
+  active_owner: .\apm\skills\coding-style-terraform-azure\
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-terraform-azure/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-terraform-azure\
+  active_owner: .\apm\skills\coding-style-terraform-azure\
+  content_hash: sha256:5c4da1c8dc129d1afc623cf715235e7701b34aa9ca17a1e53a054cf70e184604
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-terraform-azure/references/app-configuration.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-terraform-azure\
+  active_owner: .\apm\skills\coding-style-terraform-azure\
+  content_hash: sha256:2f4e4d2dcf7381ce6eeb481f6072f158cd99b841d50f7878618ad38dc991212b
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-terraform-azure/references/azapi-provider.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-terraform-azure\
+  active_owner: .\apm\skills\coding-style-terraform-azure\
+  content_hash: sha256:03c5087eab60c72a5e923b1290f3c26172844b06e879afdb4da888ed4ab57a72
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-terraform-azure/references/file-based-seeding.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-terraform-azure\
+  active_owner: .\apm\skills\coding-style-terraform-azure\
+  content_hash: sha256:97957a6bd0eb6404fc0eb4a95bb8f58446eece9a0cea861b3c67526ce1a1c837
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/coding-style-terraform-azure/references/validation-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\coding-style-terraform-azure\
+  active_owner: .\apm\skills\coding-style-terraform-azure\
+  content_hash: sha256:aac9566d9ffb8d2ce0badab0e987712ef196e5d3bbcd130cb49e80bb540574b3
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/git-commit
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/git-commit
+  active_owner: github/awesome-copilot/skills/git-commit
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/git-commit/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/git-commit
+  active_owner: github/awesome-copilot/skills/git-commit
+  content_hash: sha256:554d1a3c6d95f15bc1170160659ecdc9a9958b64f377f3988941b672c249b13f
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/microsoft-code-reference
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/microsoft-code-reference
+  active_owner: github/awesome-copilot/skills/microsoft-code-reference
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/microsoft-code-reference/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/microsoft-code-reference
+  active_owner: github/awesome-copilot/skills/microsoft-code-reference
+  content_hash: sha256:19f13822dd8674ac0a24787ac15472c9137d0db5b03750ba43ee9dcdac8ddd03
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/microsoft-docs
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/microsoft-docs
+  active_owner: github/awesome-copilot/skills/microsoft-docs
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/microsoft-docs/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/skills/microsoft-docs
+  active_owner: github/awesome-copilot/skills/microsoft-docs
+  content_hash: sha256:2c2e0b361eab0d0f2526cf8c3c5df63b996fcdd4c12ffccdccf08f8f8f1f1f9c
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/wow-conventional-commits
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\wow-conventional-commits\
+  active_owner: .\apm\skills\wow-conventional-commits\
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/wow-conventional-commits/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .\apm\skills\wow-conventional-commits\
+  active_owner: .\apm\skills\wow-conventional-commits\
+  content_hash: sha256:4e412df26759976680065bfdfce2781fb9344819a92cf2230d1b4422ff94fefa
+- kind: project-relative
+  target: copilot
+  value: .github/agents/Thinking-Beast-Mode.agent.md
+  runtime: null
+  scope: project
+  owners:
+  - github/awesome-copilot/agents/Thinking-Beast-Mode.agent.md
+  active_owner: github/awesome-copilot/agents/Thinking-Beast-Mode.agent.md
+  content_hash: sha256:53f8b55fce98038d0b59d71146c439f363f5f6daf079237c37ed20e07711269d
+- kind: uri
+  target: mcp
+  value: microsoft-learn
+  runtime: vscode
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+mcp_servers:
+- microsoft-learn
+mcp_configs:
+  microsoft-learn:
+    name: microsoft-learn
+    transport: http
+    registry: false
+    url: https://learn.microsoft.com/api/mcp
+mcp_target_servers:
+  vscode:
+  - microsoft-learn
