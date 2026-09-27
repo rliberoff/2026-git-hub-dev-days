@@ -173,11 +173,11 @@ $env:COPILOT_PROVIDER_WIRE_API = 'completions'
 $env:COPILOT_MODEL = 'gpt-5.4'
 ```
 
-`COPILOT_PROVIDER_BASE_URL` activa BYOK (*Bring Your Own Key*). Desde ese momento, Copilot CLI usa el endpoint de APIM y no el routing de modelos incluido en la licencia.
+`COPILOT_PROVIDER_BASE_URL` activa *BYOK* (*Bring Your Own Key*). Desde ese momento, Copilot CLI usa el endpoint de APIM y no el *routing* de modelos incluido en la licencia.
 
 El modelo `gpt-5.4` se usa para el coordinador. Los especialistas recibirán sus propios modelos mediante la configuración de Squad.
 
-El gateway actual expone Chat Completions. Por eso se utiliza `completions`. No cambies a `responses` durante esta guía.
+El *gateway* actual expone *Chat Completions*. Por eso se utiliza `completions`. No cambies a *Responses API* durante esta guía.
 
 ## 8. Crear el equipo de Squad
 
@@ -192,7 +192,7 @@ Añade estos especialistas. Cada comando abre el asistente de creación y permit
 
 ```powershell
 squad cast --name shuri --role lead
-squad cast --name mario --role game-developer
+squad cast --name arcade --role game-developer
 squad cast --name ironman --role backend
 squad cast --name hulk --role tester
 squad cast --name vision --role docs
@@ -289,7 +289,7 @@ Backend:      foundry-primary
 
 Esta evidencia demuestra que la ejecución de Squad generó llamadas que atravesaron APIM y llegaron al backend Foundry primario.
 
-La consulta actual identifica la suscripción y la región de backend. No identifica todavía el modelo en la métrica de APIM. Para demostrar el modelo individual, usa los anuncios de modelo de Squad junto con los deployments de Foundry y verifica el consumo del deployment en las métricas del recurso Foundry.
+La consulta actual identifica la suscripción y la región de *backend*. No identifica todavía el modelo en la métrica de APIM. Para demostrar el modelo individual, usa los anuncios de modelo de Squad junto con los *deployments* de Foundry y verifica el consumo del *deployment* en las métricas del recurso Foundry.
 
 ## 12. Construir el Tetris mínimo
 
@@ -361,7 +361,7 @@ APIM returned 429 after N successful requests.
 
 El `429` demuestra que APIM aplicó la política `llm-token-limit`. La petición fue rechazada por el gateway antes de llegar a Foundry.
 
-En la Terminal A, Squad debe mostrar un error de rate limit, un reintento o la imposibilidad temporal de continuar. No cambies el modelo ni la URL para superar el error.
+En la Terminal A, Squad debe mostrar un error de *rate limit*, un reintento o la imposibilidad temporal de continuar. No cambies el modelo ni la URL para superar el error.
 
 Espera aproximadamente un minuto para que se reinicie la ventana de tokens y pide a Squad que continúe:
 
@@ -400,7 +400,7 @@ Explica al público:
 - `requests.resultCode == "429"` demuestra el rechazo de APIM;
 - Los tokens de las solicitudes aceptadas aparecen en `customMetrics`;
 - El `429` no es un fallo regional;
-- El circuito de failover está diseñado para errores `5xx`, no para este `429`;
+- El circuito de *failover* está diseñado para errores `5xx`, no para este `429`;
 - Cambiar de modelo o región no debe permitir saltarse el límite de la suscripción.
 
 ## 15. Demostrar que no existe fallback hacia GitHub Copilot
@@ -418,7 +418,7 @@ Solicita una respuesta sencilla:
 Responde únicamente: BYOK conectado.
 ```
 
-El resultado esperado es un error `401` o equivalente del gateway. Copilot no debe responder usando los modelos incluidos en la licencia.
+El resultado esperado es un error `401` o equivalente del *gateway*. Copilot no debe responder usando los modelos incluidos en la licencia.
 
 Restaura la clave válida en una nueva sesión antes de continuar con la demostración.
 
@@ -484,8 +484,8 @@ No ejecutes `azd down` durante la demostración.
 
 ## 19. Limitaciones conocidas
 
-- APIM registra actualmente suscripción y backend, no el especialista de Squad ni el deployment de modelo como dimensiones métricas.
+- APIM registra actualmente suscripción y *backend*, no el especialista de Squad ni el *deployment* de modelo como dimensiones métricas.
 - El límite de tokens se aplica a la suscripción `demo-inference`, compartida por la sesión de Squad.
-- El `429` demuestra gobernanza de consumo, no failover regional.
-- El gateway actual publica Chat Completions; la compatibilidad completa con Responses API debe validarse por separado.
-- Los modelos de fallback predeterminados de Squad pueden incluir proveedores que no pertenecen a Foundry. Para esta demostración no aceptes fallbacks externos.
+- El `429` demuestra gobernanza de consumo, no *failover* regional.
+- El *gateway* actual publica *Chat Completions*; la compatibilidad completa con *Responses API* debe validarse por separado.
+- Los modelos de *fallback* predeterminados de Squad pueden incluir proveedores que no pertenecen a Foundry. Para esta demostración no aceptes *fallbacks* externos.
