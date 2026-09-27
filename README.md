@@ -12,7 +12,7 @@ The token limit and metric dimension identify an authenticated APIM subscription
 
 ## Before provisioning
 
-Install `azd`, Azure CLI, Terraform, GitHub Copilot CLI, Squad, and the .NET SDK. Sign in to the intended Azure subscription and select an `azd` environment. Configure the environment values required by [preflight.ps1](scripts/preflight.ps1), including subscription and tenant IDs, remote Terraform state storage, distinct regions, the JSON `TF_VAR_model_deployments` map with the same model aliases in both regions, service names, and owner/project/environment tags. The remote state storage must already exist. Obtain cost approval for the APIM tier, Foundry deployments, and telemetry retention before provisioning.
+Install `azd`, Azure CLI, Terraform, GitHub Copilot CLI, Squad, and the .NET SDK. Sign in to the intended Azure subscription and select an `azd` environment. Configure the environment values required by [preflight.ps1](scripts/preflight.ps1): the subscription ID and remote Terraform state storage. Service names, regions, Foundry model deployments, and APIM settings now ship with infra defaults and only need overriding when you want non-default values. The remote state storage must already exist. Obtain cost approval for the APIM tier, Foundry deployments, and telemetry retention before provisioning.
 
 Run the read-only checks from the repository root:
 
@@ -22,7 +22,7 @@ terraform -chdir=infra/resources init -backend=false -input=false
 terraform -chdir=infra/resources validate
 ```
 
-Preflight checks that the CLI account matches the configured subscription and tenant. It verifies the catalog SKU, subscription quota, and [Model Capacities API](https://learn.microsoft.com/azure/foundry/openai/how-to/quota#model-capacities-api) capacity for every model in both regions. Reading subscription-scoped quota may require the Cognitive Services Usages Reader role on the subscription. Capacity can change after this check, and capacity alone does not establish model compatibility with Copilot tool calling or streaming.
+Preflight checks that the CLI account matches the configured subscription, and that any overridden regions or Foundry account names remain distinct.
 
 Provision only after the target subscription, remote state, cost, and model compatibility are confirmed. This repository does not deploy resources automatically as part of preflight. The state storage account lives outside the workload Terraform configuration and remains after the workload is destroyed.
 
