@@ -16,7 +16,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if (-not $SubscriptionKey) {
-    $SubscriptionKey = Read-Host 'APIM subscription key' -AsSecureString
+    $SubscriptionKey = Read-Host 'APIM demo-ratelimit subscription key' -AsSecureString
 }
 $keyPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SubscriptionKey)
 
@@ -43,7 +43,7 @@ try {
         $succeeded = $true
     }
 
-    throw "No 429 observed in $MaxAttempts attempts. Check the APIM subscription limit and retry after the counter resets."
+    throw "No 429 observed in $MaxAttempts attempts. Check that the key belongs to the demo-ratelimit subscription and retry after the counter resets."
 } finally {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($keyPointer)
     $headers = $null

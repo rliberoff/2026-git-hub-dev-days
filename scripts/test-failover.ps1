@@ -16,6 +16,12 @@ param(
     [ValidatePattern('^https://')]
     [string]$ExpectedPrimaryUrl,
 
+    [Parameter(Mandatory)]
+    [string]$PrimaryRegion,
+
+    [Parameter(Mandatory)]
+    [string]$SecondaryRegion,
+
     [ValidateRange(4, 20)]
     [int]$MaxAttempts = 10,
 
@@ -26,6 +32,15 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# APIM reports x-ms-region as a display name ('France Central'); Azure region inputs are compact ('francecentral').
+function Get-NormalizedRegion {
+    param([object]$Value)
+    return (([string]::Join('', @($Value))) -replace '\s', '').ToLowerInvariant()
+}
+
+$expectedPrimaryRegion = Get-NormalizedRegion $PrimaryRegion
+$expectedSecondaryRegion = Get-NormalizedRegion $SecondaryRegion
 $gateway = $GatewayUrl.TrimEnd('/')
 $faultUrl = "$gateway/demo-fault"
 $backendId = 'foundry-primary'
@@ -59,8 +74,8 @@ try {
     $body = @{ model = 'gpt-5.4'; messages = @(@{ role = 'user'; content = 'Reply OK.' }); max_completion_tokens = 30 } | ConvertTo-Json -Depth 5
     $endpoint = "$gateway/openai/v1/chat/completions"
     $baseline = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
-    if ($baseline.StatusCode -ne 200 -or $baseline.Headers['x-ms-region'] -ne 'France Central') {
-        throw "Primary baseline was not France Central (HTTP $($baseline.StatusCode)); no changes were made."
+    if ($baseline.StatusCode -ne 200 -or (Get-NormalizedRegion $baseline.Headers['x-ms-region']) -ne $expectedPrimaryRegion) {
+        throw "Primary baseline was not $PrimaryRegion (HTTP $($baseline.StatusCode)); no changes were made."
     }
 
     $changed = $true
@@ -75,8 +90,8 @@ try {
     $propagationDeadline = [DateTimeOffset]::UtcNow.AddSeconds($PropagationTimeoutSeconds)
     do {
         $response = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
-        if ($response.StatusCode -eq 200 -and $response.Headers['x-ms-region'] -eq 'Switzerland North') {
-            Write-Output 'Failover confirmed while waiting for the backend update to reach the gateway: Switzerland North answered.'
+        if ($response.StatusCode -eq 200 -and (Get-NormalizedRegion $response.Headers['x-ms-region']) -eq $expectedSecondaryRegion) {
+            Write-Output "Failover confirmed while waiting for the backend update to reach the gateway: $SecondaryRegion answered."
             return
         }
         if ($response.StatusCode -eq 503 -and $response.Headers['x-demo-fault'] -eq 'primary') {
@@ -95,8 +110,8 @@ try {
 
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         $response = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
-        if ($response.StatusCode -eq 200 -and $response.Headers['x-ms-region'] -eq 'Switzerland North') {
-            Write-Output "Failover confirmed on request ${attempt}: Switzerland North answered after primary 5xx failures."
+        if ($response.StatusCode -eq 200 -and (Get-NormalizedRegion $response.Headers['x-ms-region']) -eq $expectedSecondaryRegion) {
+            Write-Output "Failover confirmed on request ${attempt}: $SecondaryRegion answered after primary 5xx failures."
             return
         }
         if ($response.StatusCode -notin @(200, 503)) {

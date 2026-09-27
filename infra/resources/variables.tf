@@ -169,14 +169,60 @@ variable "apim_sku_name" {
 }
 
 variable "apim_tokens_per_minute" {
-  description = "Maximum combined prompt and completion tokens per APIM subscription each minute."
+  description = "Maximum combined prompt and completion tokens per minute for the working APIM subscriptions."
+  type        = number
+  nullable    = false
+  default     = 60000
+
+  validation {
+    condition     = var.apim_tokens_per_minute > 0 && floor(var.apim_tokens_per_minute) == var.apim_tokens_per_minute
+    error_message = "apim_tokens_per_minute must be a positive integer."
+  }
+}
+
+variable "apim_token_quota" {
+  description = "Maximum combined prompt and completion tokens allowed per quota period for the working APIM subscriptions."
+  type        = number
+  nullable    = false
+  default     = 500000
+
+  validation {
+    condition     = var.apim_token_quota > 0 && floor(var.apim_token_quota) == var.apim_token_quota
+    error_message = "apim_token_quota must be a positive integer."
+  }
+
+  validation {
+    condition     = var.apim_token_quota >= var.apim_tokens_per_minute
+    error_message = "apim_token_quota must be greater than or equal to apim_tokens_per_minute."
+  }
+}
+
+variable "apim_token_quota_period" {
+  description = "Fixed window after which the token quota resets."
+  type        = string
+  nullable    = false
+  default     = "Daily"
+
+  validation {
+    condition     = contains(["Hourly", "Daily", "Weekly", "Monthly", "Yearly"], var.apim_token_quota_period)
+    error_message = "apim_token_quota_period must be Hourly, Daily, Weekly, Monthly or Yearly."
+  }
+}
+
+variable "apim_ratelimit_tokens_per_minute" {
+  description = "Deliberately low token rate applied only to the demo-ratelimit APIM subscription used to provoke a gateway 429."
   type        = number
   nullable    = false
   default     = 2000
 
   validation {
-    condition     = var.apim_tokens_per_minute > 0 && floor(var.apim_tokens_per_minute) == var.apim_tokens_per_minute
-    error_message = "apim_tokens_per_minute must be a positive integer."
+    condition     = var.apim_ratelimit_tokens_per_minute > 0 && floor(var.apim_ratelimit_tokens_per_minute) == var.apim_ratelimit_tokens_per_minute
+    error_message = "apim_ratelimit_tokens_per_minute must be a positive integer."
+  }
+
+  validation {
+    condition     = var.apim_ratelimit_tokens_per_minute < var.apim_tokens_per_minute
+    error_message = "apim_ratelimit_tokens_per_minute must be lower than apim_tokens_per_minute."
   }
 }
 

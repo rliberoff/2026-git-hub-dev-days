@@ -97,6 +97,17 @@ resource "azurerm_api_management_subscription" "failover" {
   allow_tracing       = false
 }
 
+# Deliberately throttled subscription used only to provoke a gateway 429 on demand.
+resource "azurerm_api_management_subscription" "ratelimit" {
+  subscription_id     = "demo-ratelimit"
+  display_name        = "Squad demo rate limit"
+  api_management_name = azurerm_api_management.this.name
+  resource_group_name = var.resource_group_name
+  api_id              = split(";", azurerm_api_management_api.openai.id)[0]
+  state               = "active"
+  allow_tracing       = false
+}
+
 resource "azurerm_api_management_api" "demo_fault" {
   name                  = "demo-fault"
   api_management_name   = azurerm_api_management.this.name
@@ -158,7 +169,14 @@ resource "azurerm_api_management_api_policy" "openai" {
     <policies>
       <inbound>
         <base />
-        <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.tokens_per_minute}" estimate-prompt-tokens="true" remaining-tokens-header-name="x-demo-remaining-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+        <choose>
+          <when condition='@(context.Subscription?.Id == "${azurerm_api_management_subscription.ratelimit.subscription_id}")'>
+            <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.ratelimit_tokens_per_minute}" estimate-prompt-tokens="true" remaining-tokens-header-name="x-demo-remaining-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+          </when>
+          <otherwise>
+            <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.tokens_per_minute}" token-quota="${var.token_quota}" token-quota-period="${var.token_quota_period}" estimate-prompt-tokens="false" remaining-tokens-header-name="x-demo-remaining-tokens" remaining-quota-tokens-header-name="x-demo-remaining-quota-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+          </otherwise>
+        </choose>
         <llm-emit-token-metric namespace="CopilotGateway">
           <dimension name="Subscription ID" />
           <dimension name="Backend ID" />

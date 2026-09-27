@@ -75,6 +75,11 @@ module "api_management" {
   publisher_email     = var.apim_publisher_email
   sku_name            = var.apim_sku_name
   tokens_per_minute   = var.apim_tokens_per_minute
+  token_quota         = var.apim_token_quota
+  token_quota_period  = var.apim_token_quota_period
+
+  ratelimit_tokens_per_minute = var.apim_ratelimit_tokens_per_minute
+
   foundry_account_ids = {
     primary   = module.foundry_primary.id
     secondary = module.foundry_secondary.id

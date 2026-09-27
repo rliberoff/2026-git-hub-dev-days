@@ -26,6 +26,18 @@ variable "tokens_per_minute" {
   type = number
 }
 
+variable "token_quota" {
+  type = number
+}
+
+variable "token_quota_period" {
+  type = string
+}
+
+variable "ratelimit_tokens_per_minute" {
+  type = number
+}
+
 variable "foundry_account_ids" {
   type = map(string)
 }

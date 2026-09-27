@@ -78,10 +78,11 @@ Comprueba que la suscripción mostrada coincide con `$SubscriptionId`.
 
 ## 3. Crear el entorno AZD
 
-Sitúate en la raíz del repositorio:
+Sitúate en la raíz del repositorio. Esta ruta depende de dónde lo hayas clonado; solicítala al principio de la demostración:
 
 ```powershell
-Set-Location 'F:\repos\personal\2026-git-hub-dev-days'
+$RepositoryRoot = Read-Host 'Ruta local del repositorio'
+Set-Location $RepositoryRoot
 azd env new $EnvironmentName
 azd env set AZURE_SUBSCRIPTION_ID $SubscriptionId
 ```
@@ -101,7 +102,7 @@ Ejecuta el aprovisionamiento completo:
 azd up -e $EnvironmentName
 ```
 
-Cuando `azd` solicite valores, confirma la suscripción y la región primaria `francecentral`.
+Cuando `azd` solicite valores, confirma la suscripción y la región primaria. Las regiones por defecto están declaradas en [infra/resources/variables.tf](../infra/resources/variables.tf) y solo necesitan sobrescribirse si quieres desplegar en otras.
 
 `azd up` ejecuta las capas declaradas en [azure.yaml](../azure.yaml) en este orden:
 
@@ -120,16 +121,18 @@ Ejecuta las comprobaciones locales:
 ./scripts/preflight.ps1
 ```
 
-Obtén la URL (*Uniform Resource Locator*) compatible con la API de OpenAI de APIM:
+Obtén la URL (*Uniform Resource Locator*) compatible con la API de OpenAI de APIM y las regiones desplegadas:
 
 ```powershell
 $CopilotBaseUrl = terraform -chdir=infra/resources output -raw copilot_base_url
+$PrimaryRegion = terraform -chdir=infra/resources output -raw primary_region
+$SecondaryRegion = terraform -chdir=infra/resources output -raw secondary_region
 $CopilotBaseUrl
 ```
 
 Debe terminar en `/openai/v1`.
 
-Comprueba que existen los cuatro deployments en cada región:
+Comprueba que existen los cuatro deployments en cada región. Los nombres están declarados en la variable `foundry_model_deployments` de [infra/resources/variables.tf](../infra/resources/variables.tf):
 
 ```text
 gpt-5.6-sol
@@ -140,13 +143,24 @@ gpt-5.4
 
 ## 6. Obtener una clave de APIM
 
+El despliegue crea tres suscripciones de APIM con propósitos distintos:
+
+| Suscripción | Uso | Límite aplicado |
+| --- | --- | --- |
+| `demo-inference` | Sesión de Copilot y Squad durante toda la demostración | 60.000 tokens por minuto y cuota diaria de 500.000 tokens |
+| `demo-failover` | Prueba de conmutación regional | Igual que `demo-inference` |
+| `demo-ratelimit` | Prueba deliberada de `429` en el paso 13 | 2.000 tokens por minuto con estimación previa del prompt |
+
+La suscripción `demo-inference` no estima los tokens del prompt antes de llamar al backend. Por eso una petición grande, como la creación del roster de Squad, no se rechaza de forma preventiva.
+
 En Azure Portal:
 
 1. Abre el servicio API Management desplegado.
 2. Abre **Subscriptions**.
 3. Selecciona `demo-inference`.
 4. Copia la clave primaria.
-5. No la guardes en el repositorio ni la pegues en una captura.
+5. Repite los pasos 3 y 4 para `demo-ratelimit` y guarda esa clave para el paso 13.
+6. No las guardes en el repositorio ni las pegues en una captura.
 
 Carga la clave en memoria como secreto de PowerShell:
 
@@ -178,6 +192,39 @@ $env:COPILOT_MODEL = 'gpt-5.4'
 El modelo `gpt-5.4` se usa para el coordinador. Los especialistas recibirán sus propios modelos mediante la configuración de Squad.
 
 El *gateway* actual expone *Chat Completions*. Por eso se utiliza `completions`. No cambies a *Responses API* durante esta guía.
+
+### Comandos de GitHub Copilot CLI
+
+Comprueba la versión y consulta las opciones disponibles antes de iniciar la sesión:
+
+```powershell
+copilot --version
+copilot --help
+```
+
+Puedes iniciar una sesión interactiva con el coordinador de Squad y el modelo configurado para esta demostración:
+
+```powershell
+copilot --model gpt-5.4 --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+También puedes iniciar primero la sesión y seleccionar el modelo y el agente desde el terminal de Copilot. Escribe estos comandos en el prompt de Copilot, no en PowerShell:
+
+```text
+/model gpt-5.4
+/agent squad
+```
+
+Usa `/model` para abrir el selector interactivo de modelos, `/models` como alias, o `/model --session gpt-5.4` para cambiar el modelo solo en la sesión actual. Usa `/agent` para abrir el selector de agentes personalizados o `/agent squad` para activar el coordinador definido en `.github/agents/squad.agent.md`.
+
+Comprueba dentro de Copilot que el modelo y el agente activos son los esperados:
+
+```text
+/model
+/agent
+```
+
+`/agent squad` selecciona el coordinador de Squad. No selecciona directamente a `shuri`, `arcade`, `ironman`, `hulk` o `vision`; esos especialistas se incorporan al roster de Squad y se solicitan mediante instrucciones al coordinador.
 
 ## 8. Crear el equipo de Squad
 
@@ -214,7 +261,7 @@ Dentro de la sesión de Copilot/Squad, solicita estas preferencias persistentes:
 ```text
 Configura estos modelos para los miembros del equipo:
 - Miembro `shuri`: gpt-5.6-sol
-- Miembro `mario`: gpt-5.6-terra
+- Miembro `arcade`: gpt-5.6-terra
 - Miembro `ironman`: gpt-5.6-terra
 - Miembro `hulk`: gpt-5.6-terra
 - Miembro `vision`: gpt-5.6-luna
@@ -229,7 +276,7 @@ Squad debe guardar los overrides en `.squad/config.json`. La estructura esperada
   "stateBackend": "local",
   "agentModelOverrides": {
     "shuri": "gpt-5.6-sol",
-    "mario": "gpt-5.6-terra",
+    "arcade": "gpt-5.6-terra",
     "ironman": "gpt-5.6-terra",
     "hulk": "gpt-5.6-terra",
     "vision": "gpt-5.6-luna"
@@ -311,7 +358,7 @@ Después solicita las fases en este orden:
 
 ```text
 Shuri: define la arquitectura mínima y las decisiones técnicas.
-Mario: implementa el bucle de juego y la representación del tablero.
+Arcade: implementa el bucle de juego y la representación del tablero.
 Ironman: revisa la estructura .NET y corrige problemas de diseño.
 Hulk: crea y ejecuta pruebas para colisiones, líneas completas y puntuación.
 Vision: documenta cómo compilar y ejecutar el juego.
@@ -328,17 +375,17 @@ Juega una partida corta para demostrar que el resultado es ejecutable.
 
 ## 13. Provocar un `429` durante el trabajo de Squad
 
-Esta prueba usa la misma suscripción APIM `demo-inference`. El límite actual es de 2.000 tokens por minuto.
+Esta prueba usa la suscripción APIM `demo-ratelimit`, limitada a 2.000 tokens por minuto. Squad sigue trabajando con `demo-inference`, que tiene un límite de trabajo mucho mayor.
 
 Usa dos terminales:
 
-- **Terminal A:** sesión de Copilot con Squad;
-- **Terminal B:** prueba de consumo APIM.
+- **Terminal A:** sesión de Copilot con Squad, autenticada con `demo-inference`;
+- **Terminal B:** prueba de consumo APIM, autenticada con `demo-ratelimit`.
 
 En la Terminal A, solicita trabajo suficiente para mantener a los especialistas activos:
 
 ```text
-Continúa mejorando el Tetris. Pide a Mario que revise el juego,
+Continúa mejorando el Tetris. Pide a Arcade que revise el juego,
 a Ironman que revise la implementación y a Hulk que amplíe las pruebas.
 Trabajad en paralelo y entrega un resumen de cada resultado.
 ```
@@ -351,7 +398,7 @@ Mientras los agentes trabajan, ejecuta en la Terminal B:
   -PromptWords 650
 ```
 
-El script usa la clave que solicita de forma segura. Introduce la misma clave de `demo-inference` que utiliza Copilot.
+El script solicita la clave de forma segura. Introduce la clave de `demo-ratelimit`, no la de `demo-inference`.
 
 El resultado esperado es:
 
@@ -361,9 +408,9 @@ APIM returned 429 after N successful requests.
 
 El `429` demuestra que APIM aplicó la política `llm-token-limit`. La petición fue rechazada por el gateway antes de llegar a Foundry.
 
-En la Terminal A, Squad debe mostrar un error de *rate limit*, un reintento o la imposibilidad temporal de continuar. No cambies el modelo ni la URL para superar el error.
+En la Terminal A, Squad debe continuar trabajando sin interrupción. Esto demuestra que el límite es por suscripción APIM y aisla el consumo de cada consumidor. No cambies el modelo ni la URL en ninguna de las dos terminales.
 
-Espera aproximadamente un minuto para que se reinicie la ventana de tokens y pide a Squad que continúe:
+Si quieres mostrar también el efecto sobre Squad, repite el script apuntando a `demo-inference` con un valor alto de `-PromptWords` y `-MaxAttempts`. Espera aproximadamente un minuto para que se reinicie la ventana de tokens y pide a Squad que continúe:
 
 ```text
 Reintenta la última tarea ahora que la ventana de consumo debería haberse reiniciado.
@@ -398,7 +445,8 @@ customMetrics
 Explica al público:
 
 - `requests.resultCode == "429"` demuestra el rechazo de APIM;
-- Los tokens de las solicitudes aceptadas aparecen en `customMetrics`;
+- Los tokens de las solicitudes aceptadas aparecen en `customMetrics`, separados por suscripción;
+- `demo-ratelimit` alcanza su límite mientras `demo-inference` sigue consumiendo con normalidad;
 - El `429` no es un fallo regional;
 - El circuito de *failover* está diseñado para errores `5xx`, no para este `429`;
 - Cambiar de modelo o región no debe permitir saltarse el límite de la suscripción.
@@ -445,6 +493,8 @@ Interpreta las columnas así:
 | `Metric` | Tipo de tokens contabilizado |
 | `Tokens` | Suma de tokens emitida por APIM en el periodo consultado |
 
+Además del límite por minuto, `demo-inference` aplica una cuota diaria de 500.000 tokens. APIM devuelve la cuota restante en la cabecera `x-demo-remaining-quota-tokens` de cada respuesta aceptada y responde `403` cuando la cuota se agota. Esto permite demostrar gobernanza de coste acumulado sin interrumpir la sesión de Squad con un `429` por minuto.
+
 Estas métricas no son una factura y no atribuyen todavía consumo a un especialista individual. La atribución actual es por suscripción APIM.
 
 ## 17. Evidencias que debe mostrar el demostrador
@@ -457,8 +507,8 @@ Guarda o muestra estas evidencias, en este orden:
 4. Squad anuncia el modelo seleccionado para cada especialista.
 5. Application Insights muestra tokens para `demo-inference` y `foundry-primary`.
 6. El Tetris compila y se ejecuta en terminal.
-7. La prueba concurrente devuelve `429`.
-8. Application Insights muestra el `429` y los tokens aceptados.
+7. La prueba sobre `demo-ratelimit` devuelve `429` mientras Squad continúa trabajando con `demo-inference`.
+8. Application Insights muestra el `429` y los tokens aceptados, separados por suscripción.
 9. La sesión con clave inválida falla y no continúa por GitHub Copilot.
 10. Tras reiniciar la ventana de cuota, Squad continúa con la misma configuración BYOK.
 
@@ -485,7 +535,8 @@ No ejecutes `azd down` durante la demostración.
 ## 19. Limitaciones conocidas
 
 - APIM registra actualmente suscripción y *backend*, no el especialista de Squad ni el *deployment* de modelo como dimensiones métricas.
-- El límite de tokens se aplica a la suscripción `demo-inference`, compartida por la sesión de Squad.
+- El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. La sesión de Squad usa `demo-inference`, con 60.000 tokens por minuto y cuota diaria.
+- `demo-inference` no estima los tokens del prompt; el límite se aplica con el consumo real devuelto por Foundry, de modo que una petición grande no se rechaza antes de ejecutarse.
 - El `429` demuestra gobernanza de consumo, no *failover* regional.
 - El *gateway* actual publica *Chat Completions*; la compatibilidad completa con *Responses API* debe validarse por separado.
 - Los modelos de *fallback* predeterminados de Squad pueden incluir proveedores que no pertenecen a Foundry. Para esta demostración no aceptes *fallbacks* externos.
