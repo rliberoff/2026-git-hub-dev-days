@@ -10,6 +10,10 @@ resource "azurerm_api_management" "this" {
   identity {
     type = "SystemAssigned"
   }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_role_assignment" "foundry_inference" {

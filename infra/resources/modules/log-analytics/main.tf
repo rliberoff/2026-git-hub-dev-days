@@ -7,4 +7,8 @@ resource "azurerm_log_analytics_workspace" "this" {
   daily_quota_gb               = 1
   local_authentication_enabled = false
   tags                         = var.tags
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
