@@ -19,6 +19,9 @@ param(
     [ValidateRange(4, 20)]
     [int]$MaxAttempts = 10,
 
+    [ValidateRange(30, 600)]
+    [int]$PropagationTimeoutSeconds = 180,
+
     [securestring]$SubscriptionKey
 )
 
@@ -67,6 +70,27 @@ try {
     if ($backend.properties.url -ne $faultUrl -or $backend.properties.circuitBreaker.rules[0].failureCondition.count -ne 3 -or
         $backend.properties.circuitBreaker.rules[0].failureCondition.statusCodeRanges[0].min -ne 500) {
         throw 'The backend URL or 5xx circuit breaker changed unexpectedly.'
+    }
+
+    $propagationDeadline = [DateTimeOffset]::UtcNow.AddSeconds($PropagationTimeoutSeconds)
+    do {
+        $response = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
+        if ($response.StatusCode -eq 200 -and $response.Headers['x-ms-region'] -eq 'Switzerland North') {
+            Write-Output 'Failover confirmed while waiting for the backend update to reach the gateway: Switzerland North answered.'
+            return
+        }
+        if ($response.StatusCode -eq 503 -and $response.Headers['x-demo-fault'] -eq 'primary') {
+            Write-Output 'The simulated primary failure is active on the gateway.'
+            break
+        }
+        if ($response.StatusCode -notin @(200, 503)) {
+            throw "Backend propagation check returned unexpected HTTP $($response.StatusCode); expected primary 200, simulated 503, or secondary 200."
+        }
+        Start-Sleep -Seconds 2
+    } while ([DateTimeOffset]::UtcNow -lt $propagationDeadline)
+
+    if ($response.StatusCode -ne 503 -or $response.Headers['x-demo-fault'] -ne 'primary') {
+        throw "The simulated backend URL did not reach the gateway within $PropagationTimeoutSeconds seconds. Last response: HTTP $($response.StatusCode), region '$($response.Headers['x-ms-region'])', fault '$($response.Headers['x-demo-fault'])'."
     }
 
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
