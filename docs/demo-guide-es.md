@@ -28,6 +28,58 @@ Squad -> GitHub Copilot CLI con BYOK -> Azure API Management -> Microsoft Foundr
 
 La demostración construye un Tetris mínimo jugable en terminal con agentes de Squad. Cada agente usa un modelo diferente desplegado en Foundry y todas las llamadas pasan por APIM.
 
+## Convención de terminales y sesiones
+
+La demostración usa cuatro terminales de PowerShell 7 con propósitos distintos. Las variables de entorno pertenecen a cada proceso: **una terminal nueva no hereda la configuración BYOK de otra, y una sesión de Copilot ya iniciada no ve los cambios que hagas después en las variables**.
+
+| Terminal | Propósito | Configuración BYOK | Pasos |
+| --- | --- | --- | --- |
+| A — Squad | `squad` y `copilot` | Sí, con la clave de `demo-inference` | 6 a 13 |
+| B — Gateway | Scripts de prueba contra APIM | No | 13 y 16 |
+| C — Infraestructura | `az`, `azd` y `preflight.ps1` | No | 2 a 5 y 19 |
+| D — Prueba negativa | Sesión con clave inválida | Sí, con una clave inválida | 15 |
+
+### Bloque de preparación de la Terminal A
+
+Ejecuta este bloque **cada vez que abras una Terminal A nueva**. Deja la terminal abierta durante toda la demostración; si la cierras, pierdes la clave y tendrás que volver a introducirla.
+
+```powershell
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+$CopilotBaseUrl = $AzdValues.copilot_base_url
+
+$env:COPILOT_PROVIDER_TYPE = 'openai'
+$env:COPILOT_PROVIDER_BASE_URL = $CopilotBaseUrl
+$env:COPILOT_PROVIDER_WIRE_API = 'completions'
+$env:COPILOT_MODEL = 'gpt-5.4'
+
+$SubscriptionKey = Read-Host 'APIM demo-inference primary key' -AsSecureString
+$Pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SubscriptionKey)
+try {
+    $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: ' +
+        [Runtime.InteropServices.Marshal]::PtrToStringBSTR($Pointer)
+} finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Pointer)
+    $SubscriptionKey = $null
+}
+```
+
+### Iniciar y cerrar la sesión de Squad
+
+Este es el único comando que inicia la sesión de trabajo de la demostración:
+
+```powershell
+copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+Para cerrarla, escribe `/exit` en el prompt de Copilot. Vuelves a PowerShell conservando las variables de entorno de la Terminal A.
+
+### Reglas que debes respetar durante la demostración
+
+- Los comandos `squad` se ejecutan en PowerShell, **no** dentro del prompt de Copilot. Sal con `/exit` antes de usarlos.
+- Las instrucciones en bloques `text` se escriben **dentro** del prompt de Copilot.
+- Cambiar `$env:COPILOT_*` no afecta a una sesión de Copilot ya abierta. Para aplicar un cambio, cierra la sesión con `/exit`, cambia la variable y vuelve a lanzar `copilot`.
+- La Terminal B nunca define variables `COPILOT_*`. Solo necesita `$CopilotBaseUrl` y la clave que el script pide de forma interactiva.
+
 ## 1. Requisitos
 
 Instala estas herramientas y comprueba que están disponibles en PowerShell 7:
@@ -52,6 +104,8 @@ Necesitas permisos de Azure para:
 No guardes claves de APIM en archivos, comandos históricos ni el repositorio.
 
 ## 2. Proporcionar los datos del entorno
+
+Todos los comandos de los pasos 2 a 5 se ejecutan en la **Terminal C**.
 
 La persona que ejecuta la demostración debe proporcionar:
 
@@ -121,14 +175,17 @@ Ejecuta las comprobaciones locales:
 ./scripts/preflight.ps1
 ```
 
-Obtén la URL (*Uniform Resource Locator*) compatible con la API de OpenAI de APIM y las regiones desplegadas:
+Obtén la URL (*Uniform Resource Locator*) compatible con la API de OpenAI de APIM y las regiones desplegadas. `azd` guarda todas las salidas de Terraform en el entorno activo, así que no hace falta consultar el estado remoto:
 
 ```powershell
-$CopilotBaseUrl = terraform -chdir=infra/resources output -raw copilot_base_url
-$PrimaryRegion = terraform -chdir=infra/resources output -raw primary_region
-$SecondaryRegion = terraform -chdir=infra/resources output -raw secondary_region
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+$CopilotBaseUrl = $AzdValues.copilot_base_url
+$PrimaryRegion = $AzdValues.primary_region
+$SecondaryRegion = $AzdValues.secondary_region
 $CopilotBaseUrl
 ```
+
+No uses `terraform -chdir=infra/resources output`. `azd` copia cada capa declarada en [azure.yaml](../azure.yaml) a `.azure/<entorno>/infra/<capa>/` e inicializa allí el backend, por lo que el directorio del repositorio no contiene ni estado ni proveedores.
 
 Debe terminar en `/openai/v1`.
 
@@ -142,6 +199,8 @@ gpt-5.4
 ```
 
 ## 6. Obtener una clave de APIM
+
+Abre ahora la **Terminal A**. Será la terminal de Squad durante el resto de la demostración y no debe cerrarse hasta el paso 19.
 
 El despliegue crea tres suscripciones de APIM con propósitos distintos:
 
@@ -160,9 +219,10 @@ En Azure Portal:
 3. Selecciona `demo-inference`.
 4. Copia la clave primaria.
 5. Repite los pasos 3 y 4 para `demo-ratelimit` y guarda esa clave para el paso 13.
-6. No las guardes en el repositorio ni las pegues en una captura.
+6. Repite los pasos 3 y 4 para `demo-failover` y guarda esa clave para el paso 16.
+7. No las guardes en el repositorio ni las pegues en una captura.
 
-Carga la clave en memoria como secreto de PowerShell:
+Carga la clave de `demo-inference` en memoria como secreto de PowerShell, en la **Terminal A**:
 
 ```powershell
 $SubscriptionKey = Read-Host 'APIM demo-inference primary key' -AsSecureString
@@ -176,7 +236,18 @@ try {
 }
 ```
 
+La clave de `demo-ratelimit` no se carga en ninguna variable de entorno. El script del paso 13 la pedirá de forma interactiva.
+
 ## 7. Configurar Copilot CLI en modo BYOK
+
+Continúa en la **Terminal A**, sin iniciar todavía ninguna sesión de Copilot.
+
+Si has abierto la terminal desde cero, obtén primero la URL del gateway:
+
+```powershell
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+$CopilotBaseUrl = $AzdValues.copilot_base_url
+```
 
 Configura Copilot para usar APIM como proveedor compatible con la API de OpenAI:
 
@@ -195,14 +266,14 @@ El *gateway* actual expone *Chat Completions*. Por eso se utiliza `completions`.
 
 ### Comandos de GitHub Copilot CLI
 
-Comprueba la versión y consulta las opciones disponibles antes de iniciar la sesión:
+Comprueba la versión y consulta las opciones disponibles en la **Terminal A**, antes de iniciar la sesión:
 
 ```powershell
 copilot --version
 copilot --help
 ```
 
-Puedes iniciar una sesión interactiva con el coordinador de Squad y el modelo configurado para esta demostración:
+Puedes abrir aquí una sesión corta para verificar que la configuración BYOK responde. La sesión definitiva se inicia en el paso 10:
 
 ```powershell
 copilot --model gpt-5.4 --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
@@ -226,7 +297,11 @@ Comprueba dentro de Copilot que el modelo y el agente activos son los esperados:
 
 `/agent squad` selecciona el coordinador de Squad. No selecciona directamente a `shuri`, `arcade`, `ironman`, `hulk` o `vision`; esos especialistas se incorporan al roster de Squad y se solicitan mediante instrucciones al coordinador.
 
+Cierra esta sesión de verificación con `/exit` antes de continuar. El paso 8 usa la CLI de Squad, que no funciona dentro del prompt de Copilot.
+
 ## 8. Crear el equipo de Squad
+
+Ejecuta estos comandos en la **Terminal A**, en el prompt de PowerShell y **sin** una sesión de Copilot abierta. La CLI de Squad lanza su propio proceso de Copilot y hereda las variables `COPILOT_*` de la terminal, de modo que el roster también se crea a través de APIM.
 
 Comprueba que no hay miembros creados:
 
@@ -256,7 +331,13 @@ El equipo debe contener cinco miembros además del coordinador.
 
 ## 9. Asignar un modelo Foundry a cada miembro
 
-Dentro de la sesión de Copilot/Squad, solicita estas preferencias persistentes:
+Este paso se ejecuta **dentro** de una sesión de Copilot. Iníciala en la **Terminal A** si la cerraste al terminar el paso 7:
+
+```powershell
+copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+Escribe la siguiente instrucción en el prompt de Copilot, no en PowerShell:
 
 ```text
 Configura estos modelos para los miembros del equipo:
@@ -288,17 +369,30 @@ No añadas un `defaultModel` que sobrescriba las preferencias individuales.
 
 ## 10. Iniciar Squad con el secreto protegido
 
-Inicia Copilot como agente coordinador de Squad:
+Squad lee `.squad/config.json` al arrancar. Para que los modelos asignados en el paso 9 estén activos, reinicia la sesión:
 
-```powershell
-copilot --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
-```
+1. Escribe `/exit` en el prompt de Copilot para cerrar la sesión del paso 9.
+2. Comprueba que sigues en la **Terminal A** y que las variables no se han perdido:
+
+   ```powershell
+   $env:COPILOT_PROVIDER_BASE_URL
+   ```
+
+   Debe mostrar la URL de APIM terminada en `/openai/v1`. Si aparece vacía, la terminal es nueva: vuelve a ejecutar el bloque de preparación de la Terminal A.
+
+3. Inicia la sesión definitiva de la demostración:
+
+   ```powershell
+   copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+   ```
 
 `--secret-env-vars` evita que el valor de la clave de APIM se exponga a herramientas de shell o servidores MCP (*Model Context Protocol*) ejecutados por los agentes.
 
+Esta sesión debe permanecer abierta durante los pasos 11, 12 y 13. No la cierres para consultar Application Insights: esas consultas se hacen en el navegador.
+
 ## 11. Confirmar que Squad usa Foundry
 
-Antes de pedir código, abre Application Insights en Azure Portal:
+Antes de pedir código, abre Application Insights en Azure Portal desde el navegador, sin tocar la Terminal A:
 
 1. Abre el recurso de Application Insights.
 2. Selecciona **Logs**.
@@ -340,7 +434,7 @@ La consulta actual identifica la suscripción y la región de *backend*. No iden
 
 ## 12. Construir el Tetris mínimo
 
-En la misma sesión de Squad, solicita el desarrollo por fases:
+Continúa en la sesión de Squad abierta en el paso 10 y solicita el desarrollo por fases:
 
 ```text
 Construye un Tetris mínimo jugable en terminal usando .NET.
@@ -364,7 +458,7 @@ Hulk: crea y ejecuta pruebas para colisiones, líneas completas y puntuación.
 Vision: documenta cómo compilar y ejecutar el juego.
 ```
 
-Cuando el equipo termine, comprueba que existe una aplicación .NET compilable:
+Cuando el equipo termine, comprueba que existe una aplicación .NET compilable. Ejecuta esto en la **Terminal C** para no cerrar la sesión de Squad:
 
 ```powershell
 dotnet build
@@ -377,12 +471,19 @@ Juega una partida corta para demostrar que el resultado es ejecutable.
 
 Esta prueba usa la suscripción APIM `demo-ratelimit`, limitada a 2.000 tokens por minuto. Squad sigue trabajando con `demo-inference`, que tiene un límite de trabajo mucho mayor.
 
-Usa dos terminales:
+Usa dos terminales simultáneas:
 
-- **Terminal A:** sesión de Copilot con Squad, autenticada con `demo-inference`;
-- **Terminal B:** prueba de consumo APIM, autenticada con `demo-ratelimit`.
+- **Terminal A:** la sesión de Squad abierta en el paso 10, autenticada con `demo-inference`. No la cierres ni cambies su configuración;
+- **Terminal B:** una terminal de PowerShell nueva, en la raíz del repositorio, **sin** ninguna variable `COPILOT_*`.
 
-En la Terminal A, solicita trabajo suficiente para mantener a los especialistas activos:
+Prepara la Terminal B así:
+
+```powershell
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+$CopilotBaseUrl = $AzdValues.copilot_base_url
+```
+
+En la **Terminal A**, solicita trabajo suficiente para mantener a los especialistas activos:
 
 ```text
 Continúa mejorando el Tetris. Pide a Arcade que revise el juego,
@@ -390,7 +491,7 @@ a Ironman que revise la implementación y a Hulk que amplíe las pruebas.
 Trabajad en paralelo y entrega un resumen de cada resultado.
 ```
 
-Mientras los agentes trabajan, ejecuta en la Terminal B:
+Mientras los agentes trabajan, ejecuta en la **Terminal B**:
 
 ```powershell
 ./scripts/test-rate-limit.ps1 `
@@ -408,9 +509,9 @@ APIM returned 429 after N successful requests.
 
 El `429` demuestra que APIM aplicó la política `llm-token-limit`. La petición fue rechazada por el gateway antes de llegar a Foundry.
 
-En la Terminal A, Squad debe continuar trabajando sin interrupción. Esto demuestra que el límite es por suscripción APIM y aisla el consumo de cada consumidor. No cambies el modelo ni la URL en ninguna de las dos terminales.
+En la **Terminal A**, Squad debe continuar trabajando sin interrupción. Esto demuestra que el límite es por suscripción APIM y aisla el consumo de cada consumidor. No cambies el modelo ni la URL en ninguna de las dos terminales.
 
-Si quieres mostrar también el efecto sobre Squad, repite el script apuntando a `demo-inference` con un valor alto de `-PromptWords` y `-MaxAttempts`. Espera aproximadamente un minuto para que se reinicie la ventana de tokens y pide a Squad que continúe:
+Si quieres mostrar también el efecto sobre Squad, repite el script en la Terminal B apuntando a `demo-inference` con un valor alto de `-PromptWords` y `-MaxAttempts`. Espera aproximadamente un minuto para que se reinicie la ventana de tokens y pide a Squad que continúe desde la Terminal A:
 
 ```text
 Reintenta la última tarea ahora que la ventana de consumo debería haberse reiniciado.
@@ -453,11 +554,20 @@ Explica al público:
 
 ## 15. Demostrar que no existe fallback hacia GitHub Copilot
 
-Abre una sesión nueva con una clave inválida:
+Esta prueba necesita una **Terminal D** nueva. No modifiques la Terminal A: si sobrescribes su clave, perderás la sesión de trabajo y tendrás que volver a introducir la clave válida.
+
+Abre una terminal de PowerShell nueva en la raíz del repositorio y configúrala con una clave inválida:
 
 ```powershell
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+
+$env:COPILOT_PROVIDER_TYPE = 'openai'
+$env:COPILOT_PROVIDER_BASE_URL = $AzdValues.copilot_base_url
+$env:COPILOT_PROVIDER_WIRE_API = 'completions'
+$env:COPILOT_MODEL = 'gpt-5.4'
 $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: invalid-for-demo'
-copilot --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
+
+copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
 Solicita una respuesta sencilla:
@@ -468,9 +578,36 @@ Responde únicamente: BYOK conectado.
 
 El resultado esperado es un error `401` o equivalente del *gateway*. Copilot no debe responder usando los modelos incluidos en la licencia.
 
-Restaura la clave válida en una nueva sesión antes de continuar con la demostración.
+Cierra la sesión con `/exit` y **cierra por completo la Terminal D**. Así garantizas que la clave inválida no se reutiliza en el resto de la demostración. Continúa en la Terminal A, que conserva la clave válida.
 
-## 16. Consultar tokens por suscripción y backend
+## 16. Demostrar el failover regional
+
+Esta prueba usa la suscripción `demo-failover` y se ejecuta en la **Terminal B**, la misma del paso 13. No requiere variables `COPILOT_*` ni cerrar la sesión de Squad.
+
+Ejecútala solo cuando ninguna otra carga esté usando el gateway de la demostración; redirige temporalmente el *backend* primario a respuestas `503` controladas.
+
+Obtén los parámetros del entorno azd y lanza el script:
+
+```powershell
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+
+./scripts/test-failover.ps1 `
+  -SubscriptionId $AzdValues.AZURE_SUBSCRIPTION_ID `
+  -ResourceGroup $AzdValues.resource_group_name `
+  -ServiceName $AzdValues.apim_name `
+  -GatewayUrl $AzdValues.apim_gateway_url `
+  -ExpectedPrimaryUrl $AzdValues.apim_primary_backend_url `
+  -PrimaryRegion $AzdValues.primary_region `
+  -SecondaryRegion $AzdValues.secondary_region
+```
+
+El script pide la clave de `demo-failover` de forma interactiva. El resultado esperado confirma que la región secundaria respondió después de los fallos `5xx` del primario.
+
+El script restaura la URL original y el *circuit breaker* en su bloque `finally`. APIM puede mantener el circuito abierto hasta dos minutos después de la restauración; espera ese tiempo antes de pedir trabajo nuevo a Squad en la Terminal A.
+
+Contrasta este comportamiento con el del paso 13: el `429` del límite de tokens no activa el *circuit breaker*, que solo reacciona a errores `5xx` del *backend*.
+
+## 17. Consultar tokens por suscripción y backend
 
 En Application Insights, ejecuta:
 
@@ -497,7 +634,7 @@ Además del límite por minuto, `demo-inference` aplica una cuota diaria de 500.
 
 Estas métricas no son una factura y no atribuyen todavía consumo a un especialista individual. La atribución actual es por suscripción APIM.
 
-## 17. Evidencias que debe mostrar el demostrador
+## 18. Evidencias que debe mostrar el demostrador
 
 Guarda o muestra estas evidencias, en este orden:
 
@@ -510,11 +647,12 @@ Guarda o muestra estas evidencias, en este orden:
 7. La prueba sobre `demo-ratelimit` devuelve `429` mientras Squad continúa trabajando con `demo-inference`.
 8. Application Insights muestra el `429` y los tokens aceptados, separados por suscripción.
 9. La sesión con clave inválida falla y no continúa por GitHub Copilot.
-10. Tras reiniciar la ventana de cuota, Squad continúa con la misma configuración BYOK.
+10. La prueba de failover obtiene una respuesta correcta desde la región secundaria tras los `5xx` del primario.
+11. Tras reiniciar la ventana de cuota, Squad continúa con la misma configuración BYOK.
 
-## 18. Recuperación al finalizar
+## 19. Recuperación al finalizar
 
-Cierra la sesión de Copilot y elimina las variables sensibles de la terminal:
+Cierra la sesión de Copilot de la Terminal A con `/exit` y elimina las variables sensibles de esa terminal:
 
 ```powershell
 Remove-Item Env:COPILOT_PROVIDER_HEADERS -ErrorAction SilentlyContinue
@@ -524,6 +662,8 @@ Remove-Item Env:COPILOT_PROVIDER_WIRE_API -ErrorAction SilentlyContinue
 Remove-Item Env:COPILOT_MODEL -ErrorAction SilentlyContinue
 ```
 
+Cierra después todas las terminales de la demostración. La clave de APIM solo vive en la memoria del proceso de PowerShell, así que cerrar la terminal la elimina.
+
 Si solo quieres detener el coste de la demostración, destruye el entorno con el comando de `azd` correspondiente después de confirmar que no necesitas conservar sus datos:
 
 ```powershell
@@ -532,7 +672,7 @@ azd down
 
 No ejecutes `azd down` durante la demostración.
 
-## 19. Limitaciones conocidas
+## 20. Limitaciones conocidas
 
 - APIM registra actualmente suscripción y *backend*, no el especialista de Squad ni el *deployment* de modelo como dimensiones métricas.
 - El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. La sesión de Squad usa `demo-inference`, con 60.000 tokens por minuto y cuota diaria.

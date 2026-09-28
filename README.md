@@ -14,7 +14,7 @@ terraform -chdir=infra/resources init -backend=false -input=false
 terraform -chdir=infra/resources validate
 ```
 
-Preflight checks that the CLI account matches the configured subscription, and that any overridden regions or Foundry account names remain distinct.
+Preflight checks that the CLI account matches the configured subscription, and that any overridden regions or Foundry account names remain distinct. The `init -backend=false` call only downloads providers so `validate` can parse the configuration; it never reads or writes remote state, and it is unrelated to the working directory `azd` uses to provision.
 
 Provision only after the target subscription, remote state, cost, and model compatibility are confirmed. This repository does not deploy resources automatically as part of preflight. The state storage account lives outside the workload Terraform configuration and remains after the workload is destroyed.
 
@@ -24,18 +24,21 @@ Retrieve the `demo-inference`, `demo-failover`, and `demo-ratelimit` API-scoped 
 
 `demo-inference` and `demo-failover` carry the working limits: a high token rate plus a token quota, enforced from the backend's reported usage. `demo-ratelimit` is deliberately throttled and estimates prompt tokens in advance, so it returns `429` quickly without affecting a live Copilot session.
 
-Read the deployment-specific values from the Terraform outputs instead of hard-coding them:
+Read the deployment-specific values from the active `azd` environment instead of hard-coding them. `azd` stores every root Terraform output there after provisioning, so no Terraform state access is needed:
 
 ```powershell
-$SubscriptionId = az account show --query id --output tsv
-$ResourceGroup = terraform -chdir=infra/resources output -raw resource_group_name
-$ServiceName = terraform -chdir=infra/resources output -raw apim_name
-$GatewayUrl = terraform -chdir=infra/resources output -raw apim_gateway_url
-$CopilotBaseUrl = terraform -chdir=infra/resources output -raw copilot_base_url
-$ExpectedPrimaryUrl = terraform -chdir=infra/resources output -raw apim_primary_backend_url
-$PrimaryRegion = terraform -chdir=infra/resources output -raw primary_region
-$SecondaryRegion = terraform -chdir=infra/resources output -raw secondary_region
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+$SubscriptionId = $AzdValues.AZURE_SUBSCRIPTION_ID
+$ResourceGroup = $AzdValues.resource_group_name
+$ServiceName = $AzdValues.apim_name
+$GatewayUrl = $AzdValues.apim_gateway_url
+$CopilotBaseUrl = $AzdValues.copilot_base_url
+$ExpectedPrimaryUrl = $AzdValues.apim_primary_backend_url
+$PrimaryRegion = $AzdValues.primary_region
+$SecondaryRegion = $AzdValues.secondary_region
 ```
+
+Do not run `terraform output` against `infra/resources`. `azd` stages each layer declared in [azure.yaml](azure.yaml) into `.azure/<environment>/infra/<layer>/` and initializes the backend there, so the repository directory has no Terraform state or provider cache.
 
 Run the rate-limit test with `demo-ratelimit`:
 
