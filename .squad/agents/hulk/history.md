@@ -17,3 +17,9 @@ hulk owns automated checks, live validation, failure scenarios, and regression c
 ## Learnings
 
 - Live checks include controlled APIM rate limiting and regional backend failover with restoration.
+
+## Session update: Terminal Tetris validation
+
+- **Timestamp:** 2026-09-28T19:52:04.082+02:00
+- **Work:** Created deterministic regression coverage in `tests/TerminalTetris.Tests/` and reviewed the implementation against the acceptance contract.
+- **Outcome:** 26 of 26 tests passed. Review verdict **APPROVED**.

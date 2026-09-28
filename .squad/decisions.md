@@ -2,7 +2,7 @@
 
 ## Active Decisions
 
-### 2026-09-28: Adoptar una aplicación de consola .NET pequeña y desacoplada
+### 2026-09-28T19:52:04.082+02:00: Adoptar y cerrar el contrato de Terminal Tetris (consolidated)
 
 **By:** Shuri
 
@@ -209,12 +209,71 @@ La primera implementación puede conservar una clase por responsabilidad. No se 
 - El objetivo es demostrar el flujo de trabajo de Copilot CLI y Squad, no fidelidad competitiva
 - Vision convertirá esta decisión en documentación orientada a la demostración
 
-#### Confirmaciones humanas recomendadas
+#### Contrato de implementación cerrado
 
-- Confirmar la versión objetivo de .NET antes de crear el proyecto
-- Confirmar si la demostración debe funcionar también en Linux y macOS
-- Confirmar si se desea una bolsa de siete piezas en vez de selección aleatoria simple
-- Confirmar si `Space` debe reservarse para *hard drop* en una iteración posterior
+La primera versión será una solución .NET con `TerminalTetris.slnx`, una aplicación de consola dirigida a `net10.0` y un proyecto de pruebas también dirigido a `net10.0`. La plataforma primaria y única exigida en esta fase es Windows PowerShell en una terminal interactiva. La selección de piezas de producción usará `Random` detrás de `IPieceSource`; las pruebas sustituirán esa interfaz por secuencias deterministas.
+
+Una bolsa de siete piezas requiere mantener y barajar estado adicional, además de probar el agotamiento y la regeneración de la bolsa. Esa complejidad no mejora los criterios del alcance mínimo jugable. El límite `IPieceSource` conserva la posibilidad de incorporarla después sin cambiar el motor.
+
+##### Alcance obligatorio
+
+- Tablero visible de 10 por 20 y siete tipos de tetrominós
+- Pieza activa separada de las celdas fijadas
+- Movimiento horizontal, descenso suave, rotación horaria y gravedad cada 500 ms
+- Colisión contra límites y celdas ocupadas
+- Bloqueo inmediato cuando la pieza no puede descender
+- Eliminación simultánea de filas completas
+- Puntuación de 100, 300, 500 y 800 por una, dos, tres y cuatro filas
+- Próxima pieza visible y fin de partida por colisión al aparecer
+- Controles: flechas izquierda, derecha, abajo y arriba; `Q` o `Escape` para salir
+- Renderizado ASCII en terminal, entrada no bloqueante y restauración del cursor al finalizar
+- Mensaje claro y salida controlada si la terminal no es interactiva, no permite posicionar el cursor o es demasiado pequeña
+
+##### Fuera de alcance
+
+- Bolsa de siete piezas, SRS, *wall kicks*, *hold*, pieza fantasma y *hard drop*
+- Niveles, aceleración, puntuación por descenso, pausa y reinicio
+- GUI, audio, configuración, persistencia, red, telemetría y servicios externos
+- Compatibilidad formal con Linux, macOS o salida redirigida
+- Pruebas automatizadas de la terminal o del tiempo real
+
+##### Criterios de aceptación para Arcade
+
+- Existe `TerminalTetris.slnx` con los proyectos `src\TerminalTetris\TerminalTetris.csproj` y `tests\TerminalTetris.Tests\TerminalTetris.Tests.csproj`, ambos con `TargetFramework` igual a `net10.0`
+- El proyecto de ejecución no tiene dependencias externas y mantiene el motor separado de `Console`, reloj y aleatoriedad concreta
+- `IPieceSource.Next()` es el único origen de piezas; la implementación de producción usa una única instancia de `Random`
+- El tablero conserva solo piezas fijadas y el render combina tablero y pieza activa
+- Los movimientos o rotaciones inválidos no alteran el estado
+- La gravedad, el bloqueo, la limpieza de filas, la puntuación, la promoción de la siguiente pieza y `GameOver` cumplen el alcance obligatorio
+- El bucle consume todas las teclas pendientes sin bloquear y evita espera activa
+- La aplicación restaura como mínimo la visibilidad del cursor mediante `try/finally`
+- Desde la raíz del repositorio, compilación, pruebas y ejecución funcionan con los comandos especificados abajo
+
+##### Criterios de aceptación para Hulk
+
+- Verifica mediante pruebas deterministas las dimensiones y límites del tablero
+- Verifica colisiones con bordes y celdas fijadas para movimiento, descenso y rotación
+- Verifica rotación válida y rechazo sin *wall kick* de una rotación inválida
+- Verifica bloqueo, aparición de la siguiente pieza y `GameOver` por colisión de aparición
+- Verifica eliminación de una, dos, tres y cuatro filas, incluyendo desplazamiento correcto de filas
+- Verifica puntuaciones exactas de 100, 300, 500 y 800 y ausencia de puntos por descenso suave
+- Verifica que una secuencia inyectada de piezas hace las pruebas repetibles
+- Ejecuta la suite completa y revisa manualmente una partida en Windows PowerShell
+- Rechaza cualquier ampliación de alcance o acoplamiento del motor con `Console`, tiempo real o `Random`
+
+##### Comandos de aceptación desde Windows PowerShell
+
+```powershell
+dotnet build .\TerminalTetris.slnx
+dotnet test .\TerminalTetris.slnx --no-build
+dotnet run --project .\src\TerminalTetris\TerminalTetris.csproj
+```
+
+Los dos primeros comandos deben finalizar con código `0`. El tercero debe abrir una partida jugable en una terminal interactiva y permitir salir con `Q` o `Escape`.
+
+##### Puerta de fase
+
+No hay bloqueos técnicos ni decisiones abiertas para el alcance mínimo. Se aprobó el paso a implementación por Arcade. Hulk aprobó la validación con 26 de 26 pruebas, y Shuri emitió el veredicto final **APROBADO** sin observaciones ni correcciones.
 
 ## Governance
 

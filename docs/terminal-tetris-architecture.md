@@ -4,7 +4,19 @@
 
 Shuri's Terminal Tetris is a small local game for demonstrating GitHub Copilot CLI and Squad workflows. It must remain easy to run, inspect, change, and test without adding frameworks or external runtime dependencies.
 
-The application is a single-process .NET console program. Its deterministic game engine is isolated from terminal input, rendering, and wall-clock time.
+The application is a single-process .NET 10 console program for an interactive Windows PowerShell terminal. Its deterministic game engine is isolated from terminal input, rendering, wall-clock time, and the production random piece source.
+
+## Build, test, and run
+
+From the repository root in Windows PowerShell, build and test the solution, then start the game:
+
+```powershell
+dotnet build .\TerminalTetris.slnx
+dotnet test .\TerminalTetris.slnx --no-build
+dotnet run --project .\src\TerminalTetris\TerminalTetris.csproj
+```
+
+Use the left and right arrows to move, the down arrow to soft drop, and the up arrow to rotate clockwise. Press `Q` or `Escape` to quit.
 
 ## Goals
 
@@ -119,13 +131,6 @@ Gravity initially advances one cell every 500 milliseconds. Rendering may be cap
 
 ## Input and rendering
 
-The initial controls are:
-
-- Left and right arrows: move horizontally
-- Down arrow: move down one cell
-- Up arrow: rotate 90 degrees clockwise
-- `Q` or `Escape`: quit
-
 The console input adapter should use non-blocking key availability checks and intercepted key reads. The renderer should build each complete frame in memory, use portable ASCII characters, and represent each board cell with a fixed width of two characters.
 
 The frame includes the board, next piece, score, cleared lines, and controls. The renderer writes from position `(0, 0)` and clears any remainder from a longer previous frame. The application hides the cursor during play and restores it on exit.
@@ -209,21 +214,14 @@ The first implementation should keep one clear responsibility per class without 
 - The board stores locked cells while the active piece remains separate.
 - Rendering uses an in-memory full frame and cursor repositioning.
 - Rotation uses predefined shape data without SRS or wall kicks.
-- Piece generation is replaceable and deterministic during tests.
+- Both projects target `net10.0`.
+- Windows PowerShell in an interactive terminal is the primary and only required platform for this phase.
+- Production uses simple independent selection through one `Random` instance behind `IPieceSource`; a seven-piece bag is out of scope.
+- Tests replace `IPieceSource` with deterministic piece sequences.
 - Initial automated tests focus on `Game` and `Board`, not terminal behavior.
 - The game has no external service integration.
 
 ## Assumptions
 
-- The demonstration will run in a modern interactive terminal.
-- A currently supported .NET SDK will be available.
 - The primary purpose is to demonstrate the Copilot CLI and Squad workflow rather than competitive Tetris fidelity.
 - The terminal supports cursor visibility and positioning when startup validation succeeds.
-
-These assumptions are not accepted platform or version commitments. Human confirmation may change them without invalidating the core engine boundaries.
-
-## Open questions
-
-- Which .NET version should the project target?
-- Must the demonstration support Windows only, or Windows, Linux, and macOS?
-- Should production piece selection use simple independent randomness or a seven-piece bag?

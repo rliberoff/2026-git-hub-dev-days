@@ -2,6 +2,8 @@
 
 This repository deploys a two-region Microsoft Foundry inference gateway for a Squad and GitHub Copilot CLI terminal-game demonstration. The architecture and acceptance criteria are in the [ADR](adr/adr-squad-copilot-apim-foundry.md).
 
+See the [Terminal Tetris architecture and run guide](docs/terminal-tetris-architecture.md) for the local game.
+
 ## Before provisioning
 
 Install `azd`, Azure CLI, Terraform, GitHub Copilot CLI, Squad, and the .NET SDK. Sign in to the intended Azure subscription and select an `azd` environment. Configure the environment values required by [preflight.ps1](scripts/preflight.ps1): the subscription ID and remote Terraform state storage. Service names, regions, Foundry model deployments, and APIM settings now ship with infra defaults and only need overriding when you want non-default values. The remote state storage must already exist. Obtain cost approval for the APIM tier, Foundry deployments, and telemetry retention before provisioning.

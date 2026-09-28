@@ -17,3 +17,9 @@ arcade owns terminal-game mechanics, interaction flow, and game-specific gateway
 ## Learnings
 
 - The game is an observable demonstration surface for GitHub Copilot CLI and the Foundry inference gateway.
+
+## Session update: Terminal Tetris implementation
+
+- **Timestamp:** 2026-09-28T19:52:04.082+02:00
+- **Work:** Created `TerminalTetris.slnx` and the minimum `src/TerminalTetris/` implementation under the approved contract.
+- **Outcome:** Delivered a clean build for the playable terminal game.

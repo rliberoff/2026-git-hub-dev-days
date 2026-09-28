@@ -1,9 +1,9 @@
 ---
-updated_at: 2026-09-28T19:41:42.000+02:00
-focus_area: Terminal Tetris architecture and design documentation
+updated_at: 2026-09-28T19:52:04.082+02:00
+focus_area: Validated Terminal Tetris delivery
 active_issues: []
 ---
 
 # What We're Focused On
 
-Completing the Terminal Tetris architecture and design-document phase. The minimum .NET console architecture is recorded and documented; implementation has not started.
+The minimum Terminal Tetris game is implemented for `net10.0`, tested with 26 of 26 passing tests, approved by Hulk and Shuri, and documented in the architecture guide and README.

@@ -23,3 +23,9 @@ shuri leads architecture, delegation, review, and final integration.
 - **Timestamp:** 2026-09-28T19:41:42.000+02:00
 - **Work:** Designed the minimum architecture for a terminal Tetris application.
 - **Outcome:** Selected a small .NET console application with a deterministic game engine separated from input, timing, rendering, and replaceable piece generation. The decision was merged into the shared decision log.
+
+## Session update: Terminal Tetris delivery
+
+- **Timestamp:** 2026-09-28T19:52:04.082+02:00
+- **Work:** Closed the `net10.0`, Windows PowerShell, and isolated `Random` implementation contract, approved implementation, and performed the final review.
+- **Outcome:** Final verdict **APPROVED**, with no observations or corrections.

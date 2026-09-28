@@ -446,7 +446,7 @@ Hulk: crea y ejecuta pruebas para colisiones, líneas completas y puntuación.
 Vision: documenta cómo compilar y ejecutar el juego.
 ```
 
-Cuando el equipo termine, comprueba que existe una aplicación .NET compilable. Ejecuta esto en la Terminal para no cerrar la sesión de Squad:
+Cuando el equipo termine, comprueba que existe una aplicación .NET compilable. Ejecuta esto en otra Terminal para no cerrar la sesión de Squad. Busca el directorio donde Squads ha colocado el código fuente y navega hasta allí antes de ejecutar los comandos.
 
 ```powershell
 dotnet build
