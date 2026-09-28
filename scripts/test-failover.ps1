@@ -28,6 +28,9 @@ param(
     [ValidateRange(30, 600)]
     [int]$PropagationTimeoutSeconds = 180,
 
+    [ValidateRange(0, 600)]
+    [int]$HoldSeconds = 0,
+
     [securestring]$SubscriptionKey
 )
 
@@ -57,9 +60,9 @@ if ($originalUrl -ne $ExpectedPrimaryUrl.TrimEnd('/') -or
     throw 'The primary backend URL differs from the expected Foundry endpoint; no changes were made.'
 }
 
-$fault = Invoke-WebRequest -Uri "$faultUrl/chat/completions" -Method Post -ContentType 'application/json' -Body '{}' -SkipHttpErrorCheck
+$fault = Invoke-WebRequest -Uri "$faultUrl/responses" -Method Post -ContentType 'application/json' -Body '{}' -SkipHttpErrorCheck
 if ($fault.StatusCode -ne 503 -or $fault.Headers['x-demo-fault'] -ne 'primary') {
-    throw 'The gateway-local 503 endpoint is unavailable; no changes were made.'
+    throw 'The gateway-local Responses 503 endpoint is unavailable; deploy the updated API before retrying.'
 }
 
 if (-not $SubscriptionKey) {
@@ -71,8 +74,8 @@ $changed = $false
 try {
     $key = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($keyPointer)
     $headers = @{ 'Ocp-Apim-Subscription-Key' = $key }
-    $body = @{ model = 'gpt-5.6-sol'; messages = @(@{ role = 'user'; content = 'Reply OK.' }); max_completion_tokens = 30 } | ConvertTo-Json -Depth 5
-    $endpoint = "$gateway/openai/v1/chat/completions"
+    $body = @{ model = 'gpt-5.6-sol'; input = 'Reply OK.'; max_output_tokens = 30 } | ConvertTo-Json -Depth 5
+    $endpoint = "$gateway/openai/v1/responses"
     $baseline = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
     if ($baseline.StatusCode -ne 200 -or (Get-NormalizedRegion $baseline.Headers['x-ms-region']) -ne $expectedPrimaryRegion) {
         throw "Primary baseline was not $PrimaryRegion (HTTP $($baseline.StatusCode)); no changes were made."
@@ -92,6 +95,10 @@ try {
         $response = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
         if ($response.StatusCode -eq 200 -and (Get-NormalizedRegion $response.Headers['x-ms-region']) -eq $expectedSecondaryRegion) {
             Write-Output "Failover confirmed while waiting for the backend update to reach the gateway: $SecondaryRegion answered."
+            if ($HoldSeconds -gt 0) {
+                Write-Output "Secondary region is available for the next $HoldSeconds seconds; send a Copilot prompt now."
+                Start-Sleep -Seconds $HoldSeconds
+            }
             return
         }
         if ($response.StatusCode -eq 503 -and $response.Headers['x-demo-fault'] -eq 'primary') {
@@ -112,6 +119,10 @@ try {
         $response = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
         if ($response.StatusCode -eq 200 -and (Get-NormalizedRegion $response.Headers['x-ms-region']) -eq $expectedSecondaryRegion) {
             Write-Output "Failover confirmed on request ${attempt}: $SecondaryRegion answered after primary 5xx failures."
+            if ($HoldSeconds -gt 0) {
+                Write-Output "Secondary region is available for the next $HoldSeconds seconds; send a Copilot prompt now."
+                Start-Sleep -Seconds $HoldSeconds
+            }
             return
         }
         if ($response.StatusCode -notin @(200, 503)) {

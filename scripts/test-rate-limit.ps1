@@ -24,11 +24,11 @@ try {
     $key = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($keyPointer)
     $headers = @{ 'Ocp-Apim-Subscription-Key' = $key }
     $body = @{
-        model                 = $Model
-        messages              = @(@{ role = 'user'; content = "Acknowledge this capacity check: $(('capacity ' * $PromptWords).TrimEnd())" })
-        max_completion_tokens = 30
+        model             = $Model
+        input             = "Acknowledge this capacity check: $(('capacity ' * $PromptWords).TrimEnd())"
+        max_output_tokens = 30
     } | ConvertTo-Json -Depth 5
-    $endpoint = "$($BaseUrl.TrimEnd('/'))/chat/completions"
+    $endpoint = "$($BaseUrl.TrimEnd('/'))/responses"
     $succeeded = $false
 
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
