@@ -279,13 +279,31 @@ Por favor configura el roster de Squad con estos cinco especialistas:
 
 Confirma la propuesta del coordinador cuando muestre los cinco especialistas. El coordinador creará sus archivos `charter.md` e `history.md`, actualizará `.squad/team.md`, `.squad/routing.md` y `.squad/casting/registry.json`, y mantendrá los cuatro agentes integrados. Después escribe `/exit` para volver a PowerShell.
 
-Comprueba el roster:
+Comprueba el *roster*, preferentemente en otro terminal para no cortar la ejecución del coordinador en Copilot:
 
 ```powershell
 squad cast
 ```
 
-El equipo debe contener cinco especialistas de la demostración y los cuatro agentes integrados, además del coordinador.
+El equipo debe contener cinco especialistas de la demostración y los cuatro agentes integrados, para un total de nueve agentes.
+
+```text
+Session Cast (9 agents):
+
+  Project agents:  9
+
+  Name          Role                                              Origin        Ghost Protocol
+  ────────────  ────────────────────────────────────────────────  ───────────── ──────────────
+  arcade        Game Developer                                    project       –
+  Fact Checker  Devil's Advocate & Verification Agent             project       –
+  hulk          Tester                                            project       –
+  ironman       Backend                                           project       –
+  Rai           RAI Reviewer                                      project       –
+  Ralph         Work Monitor                                      project       –
+  Scribe        Session Logger, Memory Manager & Decision Merger  project       –
+  shuri         Lead                                              project       –
+  vision        Docs                                              project       –
+```
 
 ## 9. Asignar un modelo Foundry a cada miembro
 
