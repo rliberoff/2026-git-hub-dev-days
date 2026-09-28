@@ -34,7 +34,7 @@ La demostración construye un Tetris mínimo jugable en Terminalon agentes de Sq
 - Las instrucciones (*prompts*) se escriben **dentro** del prompt de Copilot.
 - Después de iniciar cada sesión de Copilot usada en la demo, escribe `/allow-all on` dentro del prompt para evitar confirmaciones repetitivas. Este comando concede automáticamente las aprobaciones de herramientas durante esa sesión; úsalo solo en este repositorio de demostración.
 - Cambiar `$env:COPILOT_*` no afecta a una sesión de Copilot ya abierta. Para aplicar un cambio, cierra la sesión con `/exit`, cambia la variable y vuelve a lanzar `copilot`.
-- La Terminal nunca define variables `COPILOT_*`. Solo necesita `$CopilotBaseUrl` y la clave que el script pide de forma interactiva.
+- La Terminal de la sesión de Squad conserva sus variables `COPILOT_*` y la clave de `demo-inference`. La Terminal de prueba del paso 12 configura su propia sesión BYOK con la clave de `demo-ratelimit`; los scripts solicitan sus claves de forma interactiva.
 
 ## 1. Requisitos
 
@@ -157,7 +157,7 @@ El despliegue crea tres suscripciones de APIM con propósitos distintos:
 | --- | --- | --- |
 | `demo-inference` | Sesión de Copilot y Squad durante toda la demostración | Sin límite de tokens aplicado por APIM; Foundry conserva sus propios límites |
 | `demo-failover` | Prueba de conmutación regional | 60.000 tokens por minuto y cuota diaria de 500.000 tokens |
-| `demo-ratelimit` | Prueba deliberada de `429` en el paso 13 | 2.000 tokens por minuto con estimación previa del *prompt* |
+| `demo-ratelimit` | Prueba deliberada de `429` en el paso 12 | 2.000 tokens por minuto con estimación previa del *prompt* |
 
 La suscripción `demo-inference` no ejecuta la política `llm-token-limit` de APIM. Por eso APIM no rechaza por TPM ni por cuota diaria las peticiones de la sesión de Squad; sin embargo Microsoft Foundry todavía puede aplicar el límite de tokens del *deployment* y sus cuotas regionales.
 
@@ -167,8 +167,8 @@ En Azure Portal:
 2. Abre **Subscriptions**.
 3. Selecciona `demo-inference`.
 4. Copia la clave primaria.
-5. Repite los pasos 3 y 4 para `demo-ratelimit` y guarda esa clave para el paso 13.
-6. Repite los pasos 3 y 4 para `demo-failover` y guarda esa clave para el paso 16.
+5. Repite los pasos 3 y 4 para `demo-ratelimit` y guarda esa clave para el paso 12.
+6. Repite los pasos 3 y 4 para `demo-failover` y guarda esa clave para el paso 15.
 7. No las guardes en el repositorio ni las pegues en una captura.
 
 Carga la clave de `demo-inference` en memoria como secreto de PowerShell, en la Terminal:
@@ -185,18 +185,9 @@ try {
 }
 ```
 
-Las otras claves (`demo-ratelimit` y `demo-failover`) se cargarán de forma interactiva en los pasos 13 y 16, respectivamente.
+Las otras claves (`demo-ratelimit` y `demo-failover`) se cargarán de forma interactiva en los pasos 12 y 15, respectivamente.
 
 ## 7. Configurar Copilot CLI en modo BYOK
-
-Continúa en la Terminal, sin iniciar todavía ninguna sesión de Copilot.
-
-Si has abierto la Terminal desde cero, obtén primero la URL del gateway:
-
-```powershell
-$AzdValues = azd env get-values --output json | ConvertFrom-Json
-$CopilotBaseUrl = $AzdValues.copilot_base_url
-```
 
 Configura Copilot para usar APIM como proveedor compatible con la API de OpenAI:
 
@@ -211,21 +202,12 @@ $env:COPILOT_MODEL = 'gpt-5.6-sol'
 
 El modelo `gpt-5.6-sol` se usa para el coordinador. Los especialistas recibirán sus propios modelos mediante la configuración de Squad.
 
-El *gateway* expone tanto *Chat Completions* como *Responses API*. Esta guía usa `responses` porque los modelos de razonamiento necesitan *Responses API* cuando Squad utiliza *function tools*.
+El *gateway* expone *Responses API* para Copilot y los scripts de prueba. Los modelos de razonamiento la necesitan cuando Squad utiliza *function tools*.
 
-### Comandos de GitHub Copilot CLI
-
-Comprueba la versión y consulta las opciones disponibles en la Terminal, antes de iniciar la sesión:
+Puedes abrir aquí una sesión corta para verificar que la configuración BYOK responde. La sesión definitiva se inicia en el paso 9:
 
 ```powershell
-copilot --version
-copilot --help
-```
-
-Puedes abrir aquí una sesión corta para verificar que la configuración BYOK responde. La sesión definitiva se inicia en el paso 10:
-
-```powershell
-copilot --model gpt-5.6-sol --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
+copilot --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
 Dentro del prompt de Copilot, activa las aprobaciones automáticas:
@@ -290,6 +272,12 @@ Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de
 
 ![Pantalla de Copilot con el agente de Squads activo](images/demo-guide-1.jpg)
 
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
+```
+
 Escribe esta instrucción en el prompt de Copilot:
 
 ```text
@@ -313,7 +301,7 @@ El equipo debe contener cinco especialistas de la demostración y los cuatro age
 
 ## 9. Asignar un modelo Foundry a cada miembro
 
-Este paso se ejecuta **dentro** de una sesión de Copilot. Iníciala en la Terminal si la cerraste al terminar el paso 7:
+Este paso se ejecuta **dentro** de una sesión de Copilot. Iníciala en la Terminal si la cerraste al terminar el paso 8:
 
 ```powershell
 copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
@@ -422,13 +410,13 @@ Subscription: demo-inference
 Backend:      foundry-primary
 ```
 
-Esta evidencia demuestra que la ejecución de Squad generó llamadas que atravesaron APIM y llegaron al backend Foundry primario.
+Esta evidencia demuestra que la ejecución de Squad generó llamadas que atravesaron APIM y llegaron al Microsoft Foundry primario definido como *backend*.
 
 La consulta actual identifica la suscripción y la región de *backend*. No identifica todavía el modelo en la métrica de APIM. Para demostrar el modelo individual, usa los anuncios de modelo de Squad junto con los *deployments* de Foundry y verifica el consumo del *deployment* en las métricas del recurso Foundry.
 
-## 12. Construir el Tetris mínimo
+## 11. Construir el Tetris mínimo
 
-Continúa en la sesión de Squad abierta en el paso 10 y solicita el desarrollo por fases:
+Continúa en la sesión de Squad abierta en el paso 9 y solicita el desarrollo por fases:
 
 ```text
 Por favor construye un Tetris mínimo jugable en terminal usando .NET 10 y C#.
@@ -461,53 +449,58 @@ dotnet run
 
 Juega una partida corta para demostrar que el resultado es ejecutable.
 
-## 13. Provocar un `429` durante el trabajo de Squad
+## 12. Provocar un `429` durante el trabajo de Squad
 
 Esta prueba usa la suscripción APIM `demo-ratelimit`, limitada a 2.000 tokens por minuto. Squad sigue trabajando con `demo-inference`, que no tiene límite de tokens aplicado por APIM.
 
 Usa dos terminales simultáneas:
 
-- **Terminal:** la sesión de Squad abierta en el paso 10, autenticada con `demo-inference`. No la cierres ni cambies su configuración;
-- **Terminal:** una Terminale PowerShell nueva, en la raíz del repositorio, **sin** ninguna variable `COPILOT_*`.
+- **Terminal de Squad:** conserva la sesión abierta en el paso 9, autenticada con `demo-inference`. No la cierres ni cambies su configuración;
+- **Terminal de prueba:** abre una sesión PowerShell nueva en la raíz del repositorio. Configúrala para usar Copilot con `demo-ratelimit`; no reutilices la clave de `demo-inference`.
 
-Prepara la Terminal así:
+En la Terminal de prueba, carga la URL y configura Copilot para usar el mismo modelo y protocolo BYOK del paso 7:
 
 ```powershell
 $AzdValues = azd env get-values --output json | ConvertFrom-Json
-$CopilotBaseUrl = $AzdValues.copilot_base_url
+$env:COPILOT_PROVIDER_TYPE = 'openai'
+$env:COPILOT_PROVIDER_BASE_URL = $AzdValues.copilot_base_url
+$env:COPILOT_PROVIDER_WIRE_API = 'responses'
+$env:COPILOT_MODEL = 'gpt-5.6-sol'
+
+$SubscriptionKey = Read-Host 'APIM demo-ratelimit primary key' -AsSecureString
+$Pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SubscriptionKey)
+try {
+    $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: ' +
+        [Runtime.InteropServices.Marshal]::PtrToStringBSTR($Pointer)
+} finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Pointer)
+    $SubscriptionKey = $null
+}
+
+copilot --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
-En la Terminal, solicita trabajo suficiente para mantener a los especialistas activos:
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
 
 ```text
-Continúa mejorando el Tetris. Pide a Arcade que revise el juego,
-a Ironman que revise la implementación y a Hulk que amplíe las pruebas.
-Trabajad en paralelo y entrega un resumen de cada resultado.
+/allow-all on
 ```
 
-Mientras los agentes trabajan, ejecuta en la Terminal:
-
-```powershell
-./scripts/test-rate-limit.ps1 `
-  -BaseUrl $CopilotBaseUrl `
-  -PromptWords 650
-```
-
-El script solicita la clave de forma segura. Introduce la clave de `demo-ratelimit`, no la de `demo-inference`.
-
-El resultado esperado es:
+Envía solicitudes de análisis del proyecto que generen suficiente consumo para superar el límite. Por ejemplo:
 
 ```text
-APIM returned 429 after N successful requests.
+Revisa en detalle el Tetris que acabamos de construir: analiza el bucle de juego,
+las colisiones, la limpieza de líneas y la puntuación. Devuelve un informe amplio
+con los problemas encontrados y propuestas concretas, pero no modifiques archivos.
 ```
 
-El `429` demuestra que APIM aplicó la política `llm-token-limit`. La petición fue rechazada por el gateway antes de llegar a Foundry.
+Si Copilot responde a la primera solicitud, envía otra petición de análisis mientras siga activa la ventana de un minuto. La política estima los tokens del prompt; cuando se supera el límite, APIM rechaza la llamada antes de enviarla a Foundry y Copilot muestra el error `429` del gateway. No cierres ni reinicies esta sesión entre las solicitudes.
 
-En la Terminal, Squad debe continuar trabajando sin interrupción. Esto demuestra que el límite es por suscripción APIM y aisla el consumo de cada consumidor. No cambies el modelo ni la URL en ninguna de las dos terminales.
+Mientras tanto, la sesión de Squad de la otra terminal debe continuar trabajando con `demo-inference`. Esto demuestra que el límite es por suscripción APIM y aísla el consumo de cada consumidor. No cambies el modelo ni la URL de la sesión de Squad.
 
 No repitas esta prueba con `demo-inference` esperando un `429` de APIM: esa suscripción está exenta de `llm-token-limit`. Si Foundry alcanza el límite propio del deployment, cambiar la suscripción no lo evita.
 
-## 14. Mostrar el `429` en Application Insights
+## 13. Mostrar el `429` en Application Insights
 
 En Application Insights, ejecuta esta consulta KQL (*Kusto Query Language*):
 
@@ -540,7 +533,7 @@ Explica al público:
 - El circuito de *failover* está diseñado para errores `5xx`, no para este `429`;
 - Cambiar de modelo o región no debe permitir saltarse el límite de la suscripción.
 
-## 15. Demostrar que no existe fallback hacia GitHub Copilot
+## 14. Demostrar que no existe fallback hacia GitHub Copilot
 
 Esta prueba necesita una Terminal nueva. No modifiques la Terminal: si sobrescribes su clave, perderás la sesión de trabajo y tendrás que volver a introducir la clave válida.
 
@@ -574,13 +567,38 @@ El resultado esperado es un error `401` o equivalente del *gateway*. Copilot no 
 
 Cierra la sesión con `/exit` y **cierra por completo la Terminal**. Así garantizas que la clave inválida no se reutiliza en el resto de la demostración. Continúa en la Terminal, que conserva la clave válida.
 
-## 16. Demostrar el failover regional
+## 15. Demostrar el failover regional
 
-Esta prueba usa la suscripción `demo-failover` y se ejecuta en la Terminal, la misma del paso 13. No requiere variables `COPILOT_*` ni cerrar la sesión de Squad.
+Esta prueba mantiene una ventana de failover para enviar una petición desde Copilot. Requiere que la operación `/responses` de `demo-fault` esté desplegada; si acabas de actualizar la infraestructura, ejecuta `azd provision -e $EnvironmentName` antes de comenzar. No ejecutes la prueba mientras Squad u otra carga esté usando el *gateway*: el cambio temporal del *backend* primario afecta a todas las suscripciones.
 
-Ejecútala solo cuando ninguna otra carga esté usando el gateway de la demostración; redirige temporalmente el *backend* primario a respuestas `503` controladas.
+Usa dos terminales nuevas o libres:
 
-Obtén los parámetros del entorno azd y lanza el script:
+- **Terminal de Copilot:** usa una sesión BYOK con la clave de `demo-inference`. No reutilices la Terminal de prueba del paso 12: conserva la clave de `demo-ratelimit` y puede producir un `429`. Deja la sesión de Squad inactiva durante esta prueba.
+- **Terminal de control:** ejecuta el script con la clave de `demo-failover`. El script redirige temporalmente el *backend* primario a respuestas `503`, comprueba la región secundaria y restaura el *backend* al salir.
+
+En la Terminal de Copilot, configura BYOK e inicia una sesión nueva. Introduce tú mismo la clave, sin guardarla en archivos ni compartirla:
+
+```powershell
+$AzdValues = azd env get-values --output json | ConvertFrom-Json
+$env:COPILOT_PROVIDER_TYPE = 'openai'
+$env:COPILOT_PROVIDER_BASE_URL = $AzdValues.copilot_base_url
+$env:COPILOT_PROVIDER_WIRE_API = 'responses'
+$env:COPILOT_MODEL = 'gpt-5.6-sol'
+
+$SubscriptionKey = Read-Host 'APIM demo-inference primary key' -AsSecureString
+$Pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SubscriptionKey)
+try {
+  $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: ' +
+    [Runtime.InteropServices.Marshal]::PtrToStringBSTR($Pointer)
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Pointer)
+  $SubscriptionKey = $null
+}
+
+copilot --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+Deja Copilot abierto, sin enviar todavía la petición. En la Terminal de control, obtén los parámetros del entorno y lanza el script:
 
 ```powershell
 $AzdValues = azd env get-values --output json | ConvertFrom-Json
@@ -592,16 +610,34 @@ $AzdValues = azd env get-values --output json | ConvertFrom-Json
   -GatewayUrl $AzdValues.apim_gateway_url `
   -ExpectedPrimaryUrl $AzdValues.apim_primary_backend_url `
   -PrimaryRegion $AzdValues.primary_region `
-  -SecondaryRegion $AzdValues.secondary_region
+  -SecondaryRegion $AzdValues.secondary_region `
+  -HoldSeconds 120
 ```
 
-El script pide la clave de `demo-failover` de forma interactiva. El resultado esperado confirma que la región secundaria respondió después de los fallos `5xx` del primario.
+El script pide la clave de `demo-failover` de forma interactiva. Espera a que muestre `Secondary region is available for the next 120 seconds`. Entonces, dentro del prompt de Copilot de la otra terminal, envía:
 
-El script restaura la URL original y el *circuit breaker* en su bloque `finally`. APIM puede mantener el circuito abierto hasta dos minutos después de la restauración; espera ese tiempo antes de pedir trabajo nuevo a Squad en la Terminal.
+```text
+Responde en una frase: ¿cuál es la función de un circuit breaker en un gateway?
+```
 
-Contrasta este comportamiento con el del paso 13: el `429` del límite de tokens no activa el *circuit breaker*, que solo reacciona a errores `5xx` del *backend*.
+Copilot debería responder normalmente: el failover es transparente para el cliente. En Application Insights, comprueba que las llamadas de `demo-inference` durante la ventana usaron `foundry-secondary`:
 
-## 17. Consultar tokens por suscripción y backend
+```kusto
+customMetrics
+| where timestamp > ago(30m)
+| where name == "Total Tokens"
+| extend Subscription = tostring(customDimensions["Subscription ID"]),
+         Backend = tostring(customDimensions["Backend ID"])
+| where Subscription == "demo-inference"
+| summarize Tokens = sum(valueSum) by Subscription, Backend
+| order by Backend asc
+```
+
+La Terminal de control usa `demo-failover`, así que sus propias comprobaciones no aumentan la fila de `demo-inference`. La sesión de Squad debe permanecer inactiva para que la nueva actividad en esa fila corresponda a Copilot. El script mantiene la ventana durante 120 segundos y después restaura la URL original y el *circuit breaker* en `finally`. No cierres ni fuerces la terminación de la Terminal de control durante la espera: una terminación forzada puede impedir la restauración. APIM puede mantener el circuito abierto hasta dos minutos más; espera ese tiempo antes de solicitar trabajo nuevo a Squad.
+
+Contrasta este comportamiento con el del paso 12: el `429` del límite de tokens no activa el *circuit breaker*, que solo reacciona a errores `5xx` del *backend*. Al terminar, cierra la sesión nueva de Copilot con `/exit` y cierra su terminal para eliminar la clave de su proceso.
+
+## 16. Consultar tokens por suscripción y backend
 
 En Application Insights, ejecuta:
 
@@ -628,37 +664,11 @@ Además del límite por minuto, `demo-failover` aplica una cuota diaria de 500.0
 
 Estas métricas no son una factura y no atribuyen todavía consumo a un especialista individual. La atribución actual es por suscripción APIM.
 
-## 18. Evidencias que debe mostrar el demostrador
-
-Guarda o muestra estas evidencias, en este orden:
-
-1. `azd up` termina correctamente.
-2. Existen los deployments de Foundry en las dos regiones.
-3. Squad muestra los cinco especialistas.
-4. Squad anuncia el modelo seleccionado para cada especialista.
-5. Application Insights muestra tokens para `demo-inference` y `foundry-primary`.
-6. El Tetris compila y se ejecuta en terminal.
-7. La prueba sobre `demo-ratelimit` devuelve `429` mientras Squad continúa trabajando con `demo-inference`.
-8. Application Insights muestra el `429` y los tokens aceptados, separados por suscripción.
-9. La sesión con clave inválida falla y no continúa por GitHub Copilot.
-10. La prueba de failover obtiene una respuesta correcta desde la región secundaria tras los `5xx` del primario.
-11. La sesión de Squad continúa con la misma configuración BYOK mientras `demo-inference` permanece exenta de los límites de tokens de APIM.
-
-## 19. Recuperación al finalizar
-
-Cierra la sesión de Copilot de la Terminalon `/exit` y elimina las variables sensibles de esa terminal:
-
-```powershell
-Remove-Item Env:COPILOT_PROVIDER_HEADERS -ErrorAction SilentlyContinue
-Remove-Item Env:COPILOT_PROVIDER_BASE_URL -ErrorAction SilentlyContinue
-Remove-Item Env:COPILOT_PROVIDER_TYPE -ErrorAction SilentlyContinue
-Remove-Item Env:COPILOT_PROVIDER_WIRE_API -ErrorAction SilentlyContinue
-Remove-Item Env:COPILOT_MODEL -ErrorAction SilentlyContinue
-```
+## 17. Recuperación al finalizar
 
 Cierra después todas las terminales de la demostración. La clave de APIM solo vive en la memoria del proceso de PowerShell, así que cerrar la terminal la elimina.
 
-Si solo quieres detener el coste de la demostración, destruye el entorno con el comando de `azd` correspondiente después de confirmar que no necesitas conservar sus datos:
+Para detener cualquier coste de la demostración, destruye el entorno con el comando de `azd down`:
 
 ```powershell
 azd down --force
@@ -666,11 +676,11 @@ azd down --force
 
 No ejecutes `azd down` durante la demostración.
 
-## 20. Limitaciones conocidas
+## 18. Limitaciones conocidas
 
 - APIM registra actualmente suscripción y *backend*, no el especialista de Squad ni el *deployment* de modelo como dimensiones métricas.
 - El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. `demo-failover` conserva el límite general de 60.000 tokens por minuto y la cuota diaria; `demo-inference` está exenta de ambos límites de APIM.
 - La exención de APIM no elimina los límites del deployment de Foundry. Una petición grande puede ser rechazada por el TPM o la cuota regional del modelo antes de que APIM reciba una respuesta.
 - El `429` demuestra gobernanza de consumo, no *failover* regional.
-- El *gateway* publica *Chat Completions* y *Responses API*. La sesión de Squad usa *Responses API*; los scripts de prueba mantienen *Chat Completions* porque sus payloads y comprobaciones están diseñados para ese contrato.
+- El *gateway* publica *Responses API*. Tanto Copilot como los scripts de prueba usan `/responses`.
 - Los modelos de *fallback* predeterminados de Squad pueden incluir proveedores que no pertenecen a Foundry. Para esta demostración no aceptes *fallbacks* externos.

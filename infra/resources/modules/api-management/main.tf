@@ -123,14 +123,14 @@ resource "azurerm_api_management_api" "demo_fault" {
   subscription_required = false
 }
 
-resource "azurerm_api_management_api_operation" "demo_fault" {
-  operation_id        = "chat-completions"
+resource "azurerm_api_management_api_operation" "demo_fault_responses" {
+  operation_id        = "responses"
   api_name            = azurerm_api_management_api.demo_fault.name
   api_management_name = azurerm_api_management.this.name
   resource_group_name = var.resource_group_name
-  display_name        = "Simulate primary 503"
+  display_name        = "Simulate primary 503 for responses"
   method              = "POST"
-  url_template        = "/chat/completions"
+  url_template        = "/responses"
 }
 
 resource "azurerm_api_management_api_policy" "demo_fault" {
@@ -152,16 +152,6 @@ resource "azurerm_api_management_api_policy" "demo_fault" {
       <on-error><base /></on-error>
     </policies>
   XML
-}
-
-resource "azurerm_api_management_api_operation" "chat_completions" {
-  operation_id        = "chat-completions"
-  api_name            = azurerm_api_management_api.openai.name
-  api_management_name = azurerm_api_management.this.name
-  resource_group_name = var.resource_group_name
-  display_name        = "Create chat completion"
-  method              = "POST"
-  url_template        = "/chat/completions"
 }
 
 resource "azurerm_api_management_api_operation" "responses" {
@@ -190,7 +180,8 @@ resource "azurerm_api_management_api_policy" "openai" {
           <when condition='@(context.Subscription?.Id != "${azurerm_api_management_subscription.demo.subscription_id}")'>
             <choose>
               <when condition='@(context.Subscription?.Id == "${azurerm_api_management_subscription.ratelimit.subscription_id}")'>
-                <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.ratelimit_tokens_per_minute}" estimate-prompt-tokens="true" remaining-tokens-header-name="x-demo-remaining-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+                <!-- Custom retry header replaces the standard `Retry-After` so clients fall back to their own short backoff. -->
+                <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.ratelimit_tokens_per_minute}" estimate-prompt-tokens="true" retry-after-header-name="x-demo-retry-after" remaining-tokens-header-name="x-demo-remaining-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
               </when>
               <otherwise>
                 <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.tokens_per_minute}" token-quota="${var.token_quota}" token-quota-period="${var.token_quota_period}" estimate-prompt-tokens="false" remaining-tokens-header-name="x-demo-remaining-tokens" remaining-quota-tokens-header-name="x-demo-remaining-quota-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
