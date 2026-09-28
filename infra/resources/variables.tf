@@ -94,28 +94,21 @@ variable "foundry_model_deployments" {
       model_name      = "gpt-5.6-sol"
       model_version   = "2026-07-09"
       sku_name        = "GlobalStandard"
-      capacity        = 10
+      capacity        = 975
     },
     {
       deployment_name = "gpt-5.6-terra"
       model_name      = "gpt-5.6-terra"
       model_version   = "2026-07-09"
       sku_name        = "GlobalStandard"
-      capacity        = 10
+      capacity        = 975
     },
     {
       deployment_name = "gpt-5.6-luna"
       model_name      = "gpt-5.6-luna"
       model_version   = "2026-07-09"
       sku_name        = "GlobalStandard"
-      capacity        = 10
-    },
-    {
-      deployment_name = "gpt-5.4"
-      model_name      = "gpt-5.4"
-      model_version   = "2026-03-05"
-      sku_name        = "GlobalStandard"
-      capacity        = 10
+      capacity        = 975
     }
   ]
 

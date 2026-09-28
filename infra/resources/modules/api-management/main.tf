@@ -88,7 +88,7 @@ resource "azurerm_api_management_subscription" "demo" {
   resource_group_name = var.resource_group_name
   api_id              = split(";", azurerm_api_management_api.openai.id)[0]
   state               = "active"
-  allow_tracing       = false
+  allow_tracing       = true
 }
 
 resource "azurerm_api_management_subscription" "failover" {
@@ -98,7 +98,7 @@ resource "azurerm_api_management_subscription" "failover" {
   resource_group_name = var.resource_group_name
   api_id              = split(";", azurerm_api_management_api.openai.id)[0]
   state               = "active"
-  allow_tracing       = false
+  allow_tracing       = true
 }
 
 # Deliberately throttled subscription used only to provoke a gateway 429 on demand.
@@ -109,7 +109,7 @@ resource "azurerm_api_management_subscription" "ratelimit" {
   resource_group_name = var.resource_group_name
   api_id              = split(";", azurerm_api_management_api.openai.id)[0]
   state               = "active"
-  allow_tracing       = false
+  allow_tracing       = true
 }
 
 resource "azurerm_api_management_api" "demo_fault" {
@@ -183,12 +183,24 @@ resource "azurerm_api_management_api_policy" "openai" {
     <policies>
       <inbound>
         <base />
+        <trace source="CopilotGateway" severity="verbose">
+          <message>@(string.Concat("inbound request=", context.RequestId, "; subscription=", context.Subscription?.Id ?? "none", "; api=", context.Api?.Name ?? "none", "; operation=", context.Operation?.Name ?? "none"))</message>
+        </trace>
         <choose>
-          <when condition='@(context.Subscription?.Id == "${azurerm_api_management_subscription.ratelimit.subscription_id}")'>
-            <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.ratelimit_tokens_per_minute}" estimate-prompt-tokens="true" remaining-tokens-header-name="x-demo-remaining-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+          <when condition='@(context.Subscription?.Id != "${azurerm_api_management_subscription.demo.subscription_id}")'>
+            <choose>
+              <when condition='@(context.Subscription?.Id == "${azurerm_api_management_subscription.ratelimit.subscription_id}")'>
+                <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.ratelimit_tokens_per_minute}" estimate-prompt-tokens="true" remaining-tokens-header-name="x-demo-remaining-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+              </when>
+              <otherwise>
+                <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.tokens_per_minute}" token-quota="${var.token_quota}" token-quota-period="${var.token_quota_period}" estimate-prompt-tokens="false" remaining-tokens-header-name="x-demo-remaining-tokens" remaining-quota-tokens-header-name="x-demo-remaining-quota-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+              </otherwise>
+            </choose>
           </when>
           <otherwise>
-            <llm-token-limit counter-key="@(context.Subscription.Id)" tokens-per-minute="${var.tokens_per_minute}" token-quota="${var.token_quota}" token-quota-period="${var.token_quota_period}" estimate-prompt-tokens="false" remaining-tokens-header-name="x-demo-remaining-tokens" remaining-quota-tokens-header-name="x-demo-remaining-quota-tokens" tokens-consumed-header-name="x-demo-consumed-tokens" />
+            <trace source="CopilotGateway" severity="verbose">
+              <message>@(string.Concat("token policy=unlimited-apim; subscription=", context.Subscription?.Id ?? "none"))</message>
+            </trace>
           </otherwise>
         </choose>
         <llm-emit-token-metric namespace="CopilotGateway">
@@ -199,6 +211,9 @@ resource "azurerm_api_management_api_policy" "openai" {
         <set-header name="api-key" exists-action="delete" />
         <authentication-managed-identity resource="https://cognitiveservices.azure.com" ignore-error="false" />
         <set-backend-service backend-id="${azapi_resource.foundry_pool.name}" />
+        <trace source="CopilotGateway" severity="verbose">
+          <message>@(string.Concat("backend selected=", "${azapi_resource.foundry_pool.name}", "; request=", context.RequestId))</message>
+        </trace>
       </inbound>
       <backend><base /></backend>
       <outbound><base /></outbound>
@@ -239,6 +254,7 @@ resource "azapi_resource" "openai_diagnostic" {
       loggerId                = azurerm_api_management_logger.application_insights.id
       metrics                 = true
       alwaysLog               = "allErrors"
+      verbosity               = "verbose"
       logClientIp             = false
       httpCorrelationProtocol = "W3C"
       sampling = {

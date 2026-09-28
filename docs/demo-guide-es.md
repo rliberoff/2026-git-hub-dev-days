@@ -50,7 +50,7 @@ $CopilotBaseUrl = $AzdValues.copilot_base_url
 $env:COPILOT_PROVIDER_TYPE = 'openai'
 $env:COPILOT_PROVIDER_BASE_URL = $CopilotBaseUrl
 $env:COPILOT_PROVIDER_WIRE_API = 'responses'
-$env:COPILOT_MODEL = 'gpt-5.4'
+$env:COPILOT_MODEL = 'gpt-5.6-sol'
 
 $SubscriptionKey = Read-Host 'APIM demo-inference primary key' -AsSecureString
 $Pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SubscriptionKey)
@@ -68,7 +68,7 @@ try {
 Este es el único comando que inicia la sesión de trabajo de la demostración:
 
 ```powershell
-copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
 Para cerrarla, escribe `/exit` en el prompt de Copilot. Vuelves a PowerShell conservando las variables de entorno de la Terminal A.
@@ -195,7 +195,6 @@ Comprueba que existen los cuatro deployments en cada región. Los nombres están
 gpt-5.6-sol
 gpt-5.6-terra
 gpt-5.6-luna
-gpt-5.4
 ```
 
 ## 6. Obtener una clave de APIM
@@ -206,11 +205,11 @@ El despliegue crea tres suscripciones de APIM con propósitos distintos:
 
 | Suscripción | Uso | Límite aplicado |
 | --- | --- | --- |
-| `demo-inference` | Sesión de Copilot y Squad durante toda la demostración | 60.000 tokens por minuto y cuota diaria de 500.000 tokens |
-| `demo-failover` | Prueba de conmutación regional | Igual que `demo-inference` |
+| `demo-inference` | Sesión de Copilot y Squad durante toda la demostración | Sin límite de tokens aplicado por APIM; Foundry conserva sus propios límites |
+| `demo-failover` | Prueba de conmutación regional | 60.000 tokens por minuto y cuota diaria de 500.000 tokens |
 | `demo-ratelimit` | Prueba deliberada de `429` en el paso 13 | 2.000 tokens por minuto con estimación previa del prompt |
 
-La suscripción `demo-inference` no estima los tokens del prompt antes de llamar al backend. Por eso una petición grande, como la creación del roster de Squad, no se rechaza de forma preventiva.
+La suscripción `demo-inference` no ejecuta la política `llm-token-limit` de APIM. Por eso APIM no rechaza por TPM ni por cuota diaria las peticiones de la sesión de Squad; Foundry todavía puede aplicar el límite de tokens del deployment y sus cuotas regionales.
 
 En Azure Portal:
 
@@ -255,12 +254,12 @@ Configura Copilot para usar APIM como proveedor compatible con la API de OpenAI:
 $env:COPILOT_PROVIDER_TYPE = 'openai'
 $env:COPILOT_PROVIDER_BASE_URL = $CopilotBaseUrl
 $env:COPILOT_PROVIDER_WIRE_API = 'responses'
-$env:COPILOT_MODEL = 'gpt-5.4'
+$env:COPILOT_MODEL = 'gpt-5.6-sol'
 ```
 
 `COPILOT_PROVIDER_BASE_URL` activa *BYOK* (*Bring Your Own Key*). Desde ese momento, Copilot CLI usa el endpoint de APIM y no el *routing* de modelos incluido en la licencia.
 
-El modelo `gpt-5.4` se usa para el coordinador. Los especialistas recibirán sus propios modelos mediante la configuración de Squad.
+El modelo `gpt-5.6-sol` se usa para el coordinador. Los especialistas recibirán sus propios modelos mediante la configuración de Squad.
 
 El *gateway* expone tanto *Chat Completions* como *Responses API*. Esta guía usa `responses` porque los modelos de razonamiento necesitan *Responses API* cuando Squad utiliza *function tools*.
 
@@ -276,17 +275,17 @@ copilot --help
 Puedes abrir aquí una sesión corta para verificar que la configuración BYOK responde. La sesión definitiva se inicia en el paso 10:
 
 ```powershell
-copilot --model gpt-5.4 --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
+copilot --model gpt-5.6-sol --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
 También puedes iniciar primero la sesión y seleccionar el modelo y el agente desde el terminal de Copilot. Escribe estos comandos en el prompt de Copilot, no en PowerShell:
 
 ```text
-/model gpt-5.4
+/model gpt-5.6-sol
 /agent squad
 ```
 
-Usa `/model` para abrir el selector interactivo de modelos, `/models` como alias, o `/model --session gpt-5.4` para cambiar el modelo solo en la sesión actual. Usa `/agent` para abrir el selector de agentes personalizados o `/agent squad` para activar el coordinador definido en `.github/agents/squad.agent.md`.
+Usa `/model` para abrir el selector interactivo de modelos, `/models` como alias, o `/model --session gpt-5.6-sol` para cambiar el modelo solo en la sesión actual. Usa `/agent` para abrir el selector de agentes personalizados o `/agent squad` para activar el coordinador definido en `.github/agents/squad.agent.md`.
 
 Comprueba dentro de Copilot que el modelo y el agente activos son los esperados:
 
@@ -322,10 +321,10 @@ Es importante contestar que "no" (`n`) cuando se pregunte por *"Add @copilot as 
 Para crear los agentes especialistas del Squad, inicia una sesión del coordinador:
 
 ```powershell
-copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
-Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de Squads está activo y el modelo `gpt-5.4` seleccionado.
+Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de Squad está activo y el modelo `gpt-5.6-sol` seleccionado.
 
 ![Pantalla de Copilot con el agente de Squads activo](images/demo-guide-1.jpg)
 
@@ -338,10 +337,6 @@ Configura el roster de Squad con estos cinco especialistas:
 - `ironman`, con rol `backend`
 - `hulk`, con rol `tester`
 - `vision`, con rol `docs`
-
-Conserva los cuatro agentes integrados: Scribe, Ralph, Rai y Fact Checker.
-No añadas a `@copilot` como miembro autónomo.
-Pide confirmación antes de crear o modificar archivos.
 ```
 
 Confirma la propuesta del coordinador cuando muestre los cinco especialistas. El coordinador creará sus archivos `charter.md` e `history.md`, actualizará `.squad/team.md`, `.squad/routing.md` y `.squad/casting/registry.json`, y mantendrá los cuatro agentes integrados. Después escribe `/exit` para volver a PowerShell.
@@ -360,7 +355,7 @@ El equipo debe contener cinco especialistas de la demostración y los cuatro age
 Este paso se ejecuta **dentro** de una sesión de Copilot. Iníciala en la **Terminal A** si la cerraste al terminar el paso 7:
 
 ```powershell
-copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
 Escribe la siguiente instrucción en el prompt de Copilot, no en PowerShell:
@@ -409,7 +404,9 @@ Squad lee `.squad/config.json` al arrancar. Para que los modelos asignados en el
 3. Inicia la sesión definitiva de la demostración:
 
    ```powershell
-   copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+
+  copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
+
    ```
 
 `--secret-env-vars` evita que el valor de la clave de APIM se exponga a herramientas de shell o servidores MCP (*Model Context Protocol*) ejecutados por los agentes.
@@ -495,7 +492,7 @@ Juega una partida corta para demostrar que el resultado es ejecutable.
 
 ## 13. Provocar un `429` durante el trabajo de Squad
 
-Esta prueba usa la suscripción APIM `demo-ratelimit`, limitada a 2.000 tokens por minuto. Squad sigue trabajando con `demo-inference`, que tiene un límite de trabajo mucho mayor.
+Esta prueba usa la suscripción APIM `demo-ratelimit`, limitada a 2.000 tokens por minuto. Squad sigue trabajando con `demo-inference`, que no tiene límite de tokens aplicado por APIM.
 
 Usa dos terminales simultáneas:
 
@@ -537,13 +534,7 @@ El `429` demuestra que APIM aplicó la política `llm-token-limit`. La petición
 
 En la **Terminal A**, Squad debe continuar trabajando sin interrupción. Esto demuestra que el límite es por suscripción APIM y aisla el consumo de cada consumidor. No cambies el modelo ni la URL en ninguna de las dos terminales.
 
-Si quieres mostrar también el efecto sobre Squad, repite el script en la Terminal B apuntando a `demo-inference` con un valor alto de `-PromptWords` y `-MaxAttempts`. Espera aproximadamente un minuto para que se reinicie la ventana de tokens y pide a Squad que continúe desde la Terminal A:
-
-```text
-Reintenta la última tarea ahora que la ventana de consumo debería haberse reiniciado.
-```
-
-La tarea debe volver a progresar con la misma configuración BYOK.
+No repitas esta prueba con `demo-inference` esperando un `429` de APIM: esa suscripción está exenta de `llm-token-limit`. Si Foundry alcanza el límite propio del deployment, cambiar la suscripción no lo evita.
 
 ## 14. Mostrar el `429` en Application Insights
 
@@ -590,10 +581,10 @@ $AzdValues = azd env get-values --output json | ConvertFrom-Json
 $env:COPILOT_PROVIDER_TYPE = 'openai'
 $env:COPILOT_PROVIDER_BASE_URL = $AzdValues.copilot_base_url
 $env:COPILOT_PROVIDER_WIRE_API = 'responses'
-$env:COPILOT_MODEL = 'gpt-5.4'
+$env:COPILOT_MODEL = 'gpt-5.6-sol'
 $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: invalid-for-demo'
 
-copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
+copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
 Solicita una respuesta sencilla:
@@ -656,7 +647,7 @@ Interpreta las columnas así:
 | `Metric` | Tipo de tokens contabilizado |
 | `Tokens` | Suma de tokens emitida por APIM en el periodo consultado |
 
-Además del límite por minuto, `demo-inference` aplica una cuota diaria de 500.000 tokens. APIM devuelve la cuota restante en la cabecera `x-demo-remaining-quota-tokens` de cada respuesta aceptada y responde `403` cuando la cuota se agota. Esto permite demostrar gobernanza de coste acumulado sin interrumpir la sesión de Squad con un `429` por minuto.
+Además del límite por minuto, `demo-failover` aplica una cuota diaria de 500.000 tokens. APIM devuelve la cuota restante en la cabecera `x-demo-remaining-quota-tokens` de cada respuesta aceptada de esa suscripción y responde `403` cuando la cuota se agota. `demo-inference` está exenta de estas políticas de cuota de APIM.
 
 Estas métricas no son una factura y no atribuyen todavía consumo a un especialista individual. La atribución actual es por suscripción APIM.
 
@@ -674,7 +665,7 @@ Guarda o muestra estas evidencias, en este orden:
 8. Application Insights muestra el `429` y los tokens aceptados, separados por suscripción.
 9. La sesión con clave inválida falla y no continúa por GitHub Copilot.
 10. La prueba de failover obtiene una respuesta correcta desde la región secundaria tras los `5xx` del primario.
-11. Tras reiniciar la ventana de cuota, Squad continúa con la misma configuración BYOK.
+11. La sesión de Squad continúa con la misma configuración BYOK mientras `demo-inference` permanece exenta de los límites de tokens de APIM.
 
 ## 19. Recuperación al finalizar
 
@@ -701,8 +692,8 @@ No ejecutes `azd down` durante la demostración.
 ## 20. Limitaciones conocidas
 
 - APIM registra actualmente suscripción y *backend*, no el especialista de Squad ni el *deployment* de modelo como dimensiones métricas.
-- El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. La sesión de Squad usa `demo-inference`, con 60.000 tokens por minuto y cuota diaria.
-- `demo-inference` no estima los tokens del prompt; el límite se aplica con el consumo real devuelto por Foundry, de modo que una petición grande no se rechaza antes de ejecutarse.
+- El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. `demo-failover` conserva el límite general de 60.000 tokens por minuto y la cuota diaria; `demo-inference` está exenta de ambos límites de APIM.
+- La exención de APIM no elimina los límites del deployment de Foundry. Una petición grande puede ser rechazada por el TPM o la cuota regional del modelo antes de que APIM reciba una respuesta.
 - El `429` demuestra gobernanza de consumo, no *failover* regional.
 - El *gateway* publica *Chat Completions* y *Responses API*. La sesión de Squad usa *Responses API*; los scripts de prueba mantienen *Chat Completions* porque sus payloads y comprobaciones están diseñados para ese contrato.
 - Los modelos de *fallback* predeterminados de Squad pueden incluir proveedores que no pertenecen a Foundry. Para esta demostración no aceptes *fallbacks* externos.
