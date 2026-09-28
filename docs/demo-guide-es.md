@@ -248,18 +248,12 @@ Este comando prepara la estructura local de Squad en el proyecto actual:
 
 La inicialización es segura de repetir pues los archivos existentes se conservan. Si ya existe el directorio `.squad/` y el proyecto está inicializado, omite este comando.
 
-Es importante contestar que "no" (`n`) cuando se pregunte por *"Add @copilot as an autonomous team member?"*
+**Es importante contestar que "no" (`n`) cuando se pregunte por *"Add @copilot as an autonomous team member?"***
 
 Para crear los agentes especialistas del Squad, inicia una sesión del coordinador:
 
 ```powershell
 copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
-```
-
-Dentro del prompt de Copilot, activa las aprobaciones automáticas:
-
-```text
-/allow-all on
 ```
 
 Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de Squad está activo y el modelo `gpt-5.6-sol` seleccionado.
