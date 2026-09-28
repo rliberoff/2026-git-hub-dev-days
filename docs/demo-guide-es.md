@@ -420,7 +420,7 @@ Esta evidencia demuestra que la ejecución de Squad generó llamadas que atraves
 
 La consulta actual identifica la suscripción y la región de *backend*. No identifica todavía el modelo en la métrica de APIM. Para demostrar el modelo individual, usa los anuncios de modelo de Squad junto con los *deployments* de Foundry y verifica el consumo del *deployment* en las métricas del recurso Foundry.
 
-## 11. Construir el Tetris mínimo
+## 12. Construir el Tetris mínimo
 
 Continúa en la sesión de Squad abierta en el paso 9 y solicita el desarrollo por fases:
 
@@ -455,7 +455,7 @@ dotnet run
 
 Juega una partida corta para demostrar que el resultado es ejecutable.
 
-## 12. Provocar un `429` durante el trabajo de Squad
+## 13. Provocar un `429` durante el trabajo de Squad
 
 Esta prueba usa la suscripción APIM `demo-ratelimit`, limitada a 2.000 tokens por minuto. Squad sigue trabajando con `demo-inference`, que no tiene límite de tokens aplicado por APIM.
 
@@ -506,7 +506,7 @@ Mientras tanto, la sesión de Squad de la otra terminal debe continuar trabajand
 
 No repitas esta prueba con `demo-inference` esperando un `429` de APIM: esa suscripción está exenta de `llm-token-limit`. Si Foundry alcanza el límite propio del deployment, cambiar la suscripción no lo evita.
 
-## 13. Mostrar el `429` en Application Insights
+## 14. Mostrar el `429` en Application Insights
 
 En Application Insights, ejecuta esta consulta KQL (*Kusto Query Language*):
 
@@ -539,7 +539,7 @@ Explica al público:
 - El circuito de *failover* está diseñado para errores `5xx`, no para este `429`;
 - Cambiar de modelo o región no debe permitir saltarse el límite de la suscripción.
 
-## 14. Demostrar que no existe fallback hacia GitHub Copilot
+## 15. Demostrar que no existe fallback hacia GitHub Copilot
 
 Esta prueba necesita una Terminal nueva. No modifiques la Terminal: si sobrescribes su clave, perderás la sesión de trabajo y tendrás que volver a introducir la clave válida.
 
@@ -573,7 +573,7 @@ El resultado esperado es un error `401` o equivalente del *gateway*. Copilot no 
 
 Cierra la sesión con `/exit` y **cierra por completo la Terminal**. Así garantizas que la clave inválida no se reutiliza en el resto de la demostración. Continúa en la Terminal, que conserva la clave válida.
 
-## 15. Demostrar el failover regional
+## 16. Demostrar el failover regional
 
 Esta prueba mantiene una ventana de failover para enviar una petición desde Copilot. Requiere que la operación `/responses` de `demo-fault` esté desplegada; si acabas de actualizar la infraestructura, ejecuta `azd provision -e $EnvironmentName` antes de comenzar. No ejecutes la prueba mientras Squad u otra carga esté usando el *gateway*: el cambio temporal del *backend* primario afecta a todas las suscripciones.
 
@@ -643,7 +643,7 @@ La Terminal de control usa `demo-failover`, así que sus propias comprobaciones 
 
 Contrasta este comportamiento con el del paso 12: el `429` del límite de tokens no activa el *circuit breaker*, que solo reacciona a errores `5xx` del *backend*. Al terminar, cierra la sesión nueva de Copilot con `/exit` y cierra su terminal para eliminar la clave de su proceso.
 
-## 16. Consultar tokens por suscripción y backend
+## 17. Consultar tokens por suscripción y backend
 
 En Application Insights, ejecuta:
 
@@ -670,7 +670,7 @@ Además del límite por minuto, `demo-failover` aplica una cuota diaria de 500.0
 
 Estas métricas no son una factura y no atribuyen todavía consumo a un especialista individual. La atribución actual es por suscripción APIM.
 
-## 17. Recuperación al finalizar
+## 18. Recuperación al finalizar
 
 Cierra después todas las terminales de la demostración. La clave de APIM solo vive en la memoria del proceso de PowerShell, así que cerrar la terminal la elimina.
 
@@ -682,7 +682,7 @@ azd down --force
 
 No ejecutes `azd down` durante la demostración.
 
-## 18. Limitaciones conocidas
+## 19. Limitaciones conocidas
 
 - APIM registra actualmente suscripción y *backend*, no el especialista de Squad ni el *deployment* de modelo como dimensiones métricas.
 - El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. `demo-failover` conserva el límite general de 60.000 tokens por minuto y la cuota diaria; `demo-inference` está exenta de ambos límites de APIM.

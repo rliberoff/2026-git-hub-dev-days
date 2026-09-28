@@ -17,3 +17,9 @@ shuri leads architecture, delegation, review, and final integration.
 ## Learnings
 
 - The workload spans infrastructure, gateway behavior, live validation, and a terminal-game demonstration.
+
+## Session update: Terminal Tetris architecture
+
+- **Timestamp:** 2026-09-28T19:41:42.000+02:00
+- **Work:** Designed the minimum architecture for a terminal Tetris application.
+- **Outcome:** Selected a small .NET console application with a deterministic game engine separated from input, timing, rendering, and replaceable piece generation. The decision was merged into the shared decision log.

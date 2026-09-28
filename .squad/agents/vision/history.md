@@ -17,3 +17,9 @@ vision owns project, architecture, operational, and contributor documentation.
 ## Learnings
 
 - The README is the observable source for provisioning prerequisites, live tests, and telemetry follow-up.
+
+## Session update: Terminal Tetris design documentation
+
+- **Timestamp:** 2026-09-28T19:41:42.000+02:00
+- **Work:** Converted Shuri's architecture decision into `docs/terminal-tetris-architecture.md`.
+- **Outcome:** Documented the proposed components, game loop, state model, terminal behavior, minimum rules, risks, and implementation boundaries without creating implementation code.
