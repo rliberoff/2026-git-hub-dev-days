@@ -9,7 +9,7 @@ param(
     [ValidateRange(1, 1500)]
     [int]$PromptWords = 650,
 
-    [string]$Model = 'gpt-5.4',
+    [string]$Model = 'gpt-5.6-sol',
 
     [securestring]$SubscriptionKey
 )

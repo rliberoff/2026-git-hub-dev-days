@@ -71,7 +71,7 @@ $changed = $false
 try {
     $key = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($keyPointer)
     $headers = @{ 'Ocp-Apim-Subscription-Key' = $key }
-    $body = @{ model = 'gpt-5.4'; messages = @(@{ role = 'user'; content = 'Reply OK.' }); max_completion_tokens = 30 } | ConvertTo-Json -Depth 5
+    $body = @{ model = 'gpt-5.6-sol'; messages = @(@{ role = 'user'; content = 'Reply OK.' }); max_completion_tokens = 30 } | ConvertTo-Json -Depth 5
     $endpoint = "$gateway/openai/v1/chat/completions"
     $baseline = Invoke-WebRequest -Uri $endpoint -Method Post -Headers $headers -ContentType 'application/json' -Body $body -SkipHttpErrorCheck
     if ($baseline.StatusCode -ne 200 -or (Get-NormalizedRegion $baseline.Headers['x-ms-region']) -ne $expectedPrimaryRegion) {
