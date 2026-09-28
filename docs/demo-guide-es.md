@@ -303,7 +303,13 @@ Cierra esta sesión de verificación con `/exit` antes de continuar. El paso 8 u
 
 Ejecuta estos comandos en la **Terminal A**, en el prompt de PowerShell y **sin** una sesión de Copilot abierta. La CLI de Squad lanza su propio proceso de Copilot y hereda las variables `COPILOT_*` de la terminal, de modo que el roster también se crea a través de APIM.
 
-Comprueba que no hay miembros creados:
+Si el proyecto todavía no está inicializado para Squad, ejecuta primero:
+
+```powershell
+squad init
+```
+
+Si ya existe `.squad/` y el proyecto está inicializado, omite este comando. Comprueba el estado y el roster actuales antes de añadir especialistas:
 
 ```powershell
 squad status
