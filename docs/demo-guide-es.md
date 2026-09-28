@@ -49,6 +49,20 @@ squad --version
 dotnet --version
 ```
 
+Compara la salida de esos comandos con esta tabla:
+
+| Herramienta | Versión mínima | Verificada en esta demostración | Origen del mínimo |
+| --- | --- | --- | --- |
+| PowerShell | 7.0 | 7.6.6 | Esta guía usa sintaxis de PowerShell 7 |
+| Terraform | 1.14.0 | 1.16.2 | `required_version` en [infra/resources/providers.tf](../infra/resources/providers.tf) |
+| .NET SDK | 10.0 | 10.0.401 | El Tetris del paso 11 exige .NET 10 |
+| Azure CLI (`az`) | Sin mínimo declarado | 2.90.0 | — |
+| Azure Developer CLI (`azd`) | Sin mínimo declarado | 1.34.2 | — |
+| GitHub Copilot CLI | Sin mínimo declarado | 1.0.88 | — |
+| Squad | Sin mínimo declarado | 0.13.1 | — |
+
+Las tres primeras filas son requisitos: por debajo de esas versiones la demostración falla. Las cuatro últimas no tienen mínimo fijado en el repositorio; se indican las versiones con las que se comprobó la demostración, así que úsalas como referencia si algo no funciona.
+
 Necesitas permisos de Azure para:
 
 - Crear recursos en la suscripción de Azure;
@@ -185,6 +199,10 @@ try {
 }
 ```
 
+Este bloque existe porque hay un conflicto entre dos necesidades: la clave no debe quedar registrada en ningún sitio, pero Copilot CLI solo la acepta como texto plano en una variable de entorno.
+
+El resultado es que la clave solo queda en `$env:COPILOT_PROVIDER_HEADERS`, dentro de este proceso de PowerShell, y desaparece al cerrar la terminal. Por eso la guía nunca te pide guardarla en un archivo.
+
 Las otras claves (`demo-ratelimit` y `demo-failover`) se cargarán de forma interactiva en los pasos 12 y 15, respectivamente.
 
 ## 7. Configurar Copilot CLI en modo BYOK
@@ -209,30 +227,6 @@ Puedes abrir aquí una sesión corta para verificar que la configuración BYOK r
 ```powershell
 copilot --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
-
-Dentro del prompt de Copilot, activa las aprobaciones automáticas:
-
-```text
-/allow-all on
-```
-
-También puedes iniciar primero la sesión y seleccionar el modelo y el agente desde el Terminale Copilot. Escribe estos comandos en el prompt de Copilot, no en PowerShell:
-
-```text
-/model gpt-5.6-sol
-/agent squad
-```
-
-Usa `/model` para abrir el selector interactivo de modelos, `/models` como alias, o `/model --session gpt-5.6-sol` para cambiar el modelo solo en la sesión actual. Usa `/agent` para abrir el selector de agentes personalizados o `/agent squad` para activar el coordinador definido en `.github/agents/squad.agent.md`.
-
-Comprueba dentro de Copilot que el modelo y el agente activos son los esperados:
-
-```text
-/model
-/agent
-```
-
-`/agent squad` selecciona el coordinador de Squad. No selecciona directamente a `shuri`, `arcade`, `ironman`, `hulk` o `vision`; esos especialistas se incorporan al roster de Squad y se solicitan mediante instrucciones al coordinador.
 
 Cierra esta sesión de verificación con `/exit` antes de continuar. En el paso 8 ejecutarás `squad init` desde PowerShell y después iniciarás una sesión del coordinador para crear el roster.
 
