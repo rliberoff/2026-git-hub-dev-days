@@ -49,7 +49,7 @@ $CopilotBaseUrl = $AzdValues.copilot_base_url
 
 $env:COPILOT_PROVIDER_TYPE = 'openai'
 $env:COPILOT_PROVIDER_BASE_URL = $CopilotBaseUrl
-$env:COPILOT_PROVIDER_WIRE_API = 'completions'
+$env:COPILOT_PROVIDER_WIRE_API = 'responses'
 $env:COPILOT_MODEL = 'gpt-5.4'
 
 $SubscriptionKey = Read-Host 'APIM demo-inference primary key' -AsSecureString
@@ -254,7 +254,7 @@ Configura Copilot para usar APIM como proveedor compatible con la API de OpenAI:
 ```powershell
 $env:COPILOT_PROVIDER_TYPE = 'openai'
 $env:COPILOT_PROVIDER_BASE_URL = $CopilotBaseUrl
-$env:COPILOT_PROVIDER_WIRE_API = 'completions'
+$env:COPILOT_PROVIDER_WIRE_API = 'responses'
 $env:COPILOT_MODEL = 'gpt-5.4'
 ```
 
@@ -262,7 +262,7 @@ $env:COPILOT_MODEL = 'gpt-5.4'
 
 El modelo `gpt-5.4` se usa para el coordinador. Los especialistas recibirán sus propios modelos mediante la configuración de Squad.
 
-El *gateway* actual expone *Chat Completions*. Por eso se utiliza `completions`. No cambies a *Responses API* durante esta guía.
+El *gateway* expone tanto *Chat Completions* como *Responses API*. Esta guía usa `responses` porque los modelos de razonamiento necesitan *Responses API* cuando Squad utiliza *function tools*.
 
 ### Comandos de GitHub Copilot CLI
 
@@ -297,34 +297,54 @@ Comprueba dentro de Copilot que el modelo y el agente activos son los esperados:
 
 `/agent squad` selecciona el coordinador de Squad. No selecciona directamente a `shuri`, `arcade`, `ironman`, `hulk` o `vision`; esos especialistas se incorporan al roster de Squad y se solicitan mediante instrucciones al coordinador.
 
-Cierra esta sesión de verificación con `/exit` antes de continuar. El paso 8 usa la CLI de Squad, que no funciona dentro del prompt de Copilot.
+Cierra esta sesión de verificación con `/exit` antes de continuar. En el paso 8 ejecutarás `squad init` desde PowerShell y después iniciarás una sesión del coordinador para crear el roster.
 
 ## 8. Crear el equipo de Squad
 
-Ejecuta estos comandos en la **Terminal A**, en el prompt de PowerShell y **sin** una sesión de Copilot abierta. La CLI de Squad lanza su propio proceso de Copilot y hereda las variables `COPILOT_*` de la terminal, de modo que el roster también se crea a través de APIM.
+Ejecuta `squad init` en la **Terminal A**, desde PowerShell y sin una sesión de Copilot abierta. Después iniciarás una sesión del coordinador en la misma terminal; esa sesión hereda las variables `COPILOT_*` y crea el roster a través de APIM.
 
 Si el proyecto todavía no está inicializado para Squad, ejecuta primero:
 
 ```powershell
-squad init
+squad init --state-backend local --no-workflows
 ```
 
-Si ya existe `.squad/` y el proyecto está inicializado, omite este comando. Comprueba el estado y el roster actuales antes de añadir especialistas:
+Este comando prepara la estructura local de Squad en el proyecto actual:
+
+- `squad init` crea el layout basado en Markdown bajo `.squad/` y deja preparado el archivo de configuración persistente del equipo. No añade por sí solo los cinco especialistas de esta demostración; esos se incorporan después mediante el coordinador de Squad.
+- `--state-backend local` configura el estado de Squad para que se mantenga en el propio proyecto, en lugar de usar un backend alternativo o un equipo remoto.
+- `--no-workflows` evita que Squad escriba workflows de GitHub Actions bajo `.github/`. La demostración ejecuta Squad desde la Terminal A y no necesita automatizaciones de GitHub Actions.
+
+La inicialización es segura de repetir pues los archivos existentes se conservan. Si ya existe el directorio `.squad/` y el proyecto está inicializado, omite este comando.
+
+Es importante contestar que "no" (`n`) cuando se pregunte por *"Add @copilot as an autonomous team member?"*
+
+Para crear los agentes especialistas del Squad, inicia una sesión del coordinador:
 
 ```powershell
-squad status
-squad cast
+copilot --agent squad --model gpt-5.4 --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
-Añade estos especialistas. Cada comando abre el asistente de creación y permite confirmar la incorporación:
+Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de Squads está activo y el modelo `gpt-5.4` seleccionado.
 
-```powershell
-squad cast --name shuri --role lead
-squad cast --name arcade --role game-developer
-squad cast --name ironman --role backend
-squad cast --name hulk --role tester
-squad cast --name vision --role docs
+![Pantalla de Copilot con el agente de Squads activo](images/demo-guide-1.jpg)
+
+Escribe esta instrucción en el prompt de Copilot:
+
+```text
+Configura el roster de Squad con estos cinco especialistas:
+- `shuri`, con rol `lead`
+- `arcade`, con rol `game-developer`
+- `ironman`, con rol `backend`
+- `hulk`, con rol `tester`
+- `vision`, con rol `docs`
+
+Conserva los cuatro agentes integrados: Scribe, Ralph, Rai y Fact Checker.
+No añadas a `@copilot` como miembro autónomo.
+Pide confirmación antes de crear o modificar archivos.
 ```
+
+Confirma la propuesta del coordinador cuando muestre los cinco especialistas. El coordinador creará sus archivos `charter.md` e `history.md`, actualizará `.squad/team.md`, `.squad/routing.md` y `.squad/casting/registry.json`, y mantendrá los cuatro agentes integrados. Después escribe `/exit` para volver a PowerShell.
 
 Comprueba el roster:
 
@@ -333,7 +353,7 @@ squad cast
 squad doctor
 ```
 
-El equipo debe contener cinco miembros además del coordinador.
+El equipo debe contener cinco especialistas de la demostración y los cuatro agentes integrados, además del coordinador.
 
 ## 9. Asignar un modelo Foundry a cada miembro
 
@@ -569,7 +589,7 @@ $AzdValues = azd env get-values --output json | ConvertFrom-Json
 
 $env:COPILOT_PROVIDER_TYPE = 'openai'
 $env:COPILOT_PROVIDER_BASE_URL = $AzdValues.copilot_base_url
-$env:COPILOT_PROVIDER_WIRE_API = 'completions'
+$env:COPILOT_PROVIDER_WIRE_API = 'responses'
 $env:COPILOT_MODEL = 'gpt-5.4'
 $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: invalid-for-demo'
 
@@ -684,5 +704,5 @@ No ejecutes `azd down` durante la demostración.
 - El límite estricto de 2.000 tokens por minuto se aplica solo a `demo-ratelimit`. La sesión de Squad usa `demo-inference`, con 60.000 tokens por minuto y cuota diaria.
 - `demo-inference` no estima los tokens del prompt; el límite se aplica con el consumo real devuelto por Foundry, de modo que una petición grande no se rechaza antes de ejecutarse.
 - El `429` demuestra gobernanza de consumo, no *failover* regional.
-- El *gateway* actual publica *Chat Completions*; la compatibilidad completa con *Responses API* debe validarse por separado.
+- El *gateway* publica *Chat Completions* y *Responses API*. La sesión de Squad usa *Responses API*; los scripts de prueba mantienen *Chat Completions* porque sus payloads y comprobaciones están diseñados para ese contrato.
 - Los modelos de *fallback* predeterminados de Squad pueden incluir proveedores que no pertenecen a Foundry. Para esta demostración no aceptes *fallbacks* externos.

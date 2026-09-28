@@ -164,6 +164,16 @@ resource "azurerm_api_management_api_operation" "chat_completions" {
   url_template        = "/chat/completions"
 }
 
+resource "azurerm_api_management_api_operation" "responses" {
+  operation_id        = "responses"
+  api_name            = azurerm_api_management_api.openai.name
+  api_management_name = azurerm_api_management.this.name
+  resource_group_name = var.resource_group_name
+  display_name        = "Create response"
+  method              = "POST"
+  url_template        = "/responses"
+}
+
 resource "azurerm_api_management_api_policy" "openai" {
   api_name            = azurerm_api_management_api.openai.name
   api_management_name = azurerm_api_management.this.name
