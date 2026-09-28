@@ -32,6 +32,7 @@ La demostración construye un Tetris mínimo jugable en Terminalon agentes de Sq
 
 - Los comandos `squad` se ejecutan en PowerShell, **no** dentro del prompt de Copilot. Sal con `/exit` antes de usarlos.
 - Las instrucciones (*prompts*) se escriben **dentro** del prompt de Copilot.
+- Después de iniciar cada sesión de Copilot usada en la demo, escribe `/allow-all on` dentro del prompt para evitar confirmaciones repetitivas. Este comando concede automáticamente las aprobaciones de herramientas durante esa sesión; úsalo solo en este repositorio de demostración.
 - Cambiar `$env:COPILOT_*` no afecta a una sesión de Copilot ya abierta. Para aplicar un cambio, cierra la sesión con `/exit`, cambia la variable y vuelve a lanzar `copilot`.
 - La Terminal nunca define variables `COPILOT_*`. Solo necesita `$CopilotBaseUrl` y la clave que el script pide de forma interactiva.
 
@@ -227,6 +228,12 @@ Puedes abrir aquí una sesión corta para verificar que la configuración BYOK r
 copilot --model gpt-5.6-sol --agent squad --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
+```
+
 También puedes iniciar primero la sesión y seleccionar el modelo y el agente desde el Terminale Copilot. Escribe estos comandos en el prompt de Copilot, no en PowerShell:
 
 ```text
@@ -273,6 +280,12 @@ Para crear los agentes especialistas del Squad, inicia una sesión del coordinad
 copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
+```
+
 Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de Squad está activo y el modelo `gpt-5.6-sol` seleccionado.
 
 ![Pantalla de Copilot con el agente de Squads activo](images/demo-guide-1.jpg)
@@ -304,6 +317,12 @@ Este paso se ejecuta **dentro** de una sesión de Copilot. Iníciala en la Termi
 
 ```powershell
 copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
 ```
 
 Escribe la siguiente instrucción en el prompt de Copilot, no en PowerShell:
@@ -354,6 +373,12 @@ Squad lee `.squad/config.json` al arrancar. Para que los modelos asignados en el
   ```powershell
   copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
   ```
+
+   Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+   ```text
+   /allow-all on
+   ```
 
 `--secret-env-vars` evita que el valor de la clave de APIM se exponga a herramientas de shell o servidores MCP (*Model Context Protocol*) ejecutados por los agentes.
 
@@ -531,6 +556,12 @@ $env:COPILOT_MODEL = 'gpt-5.6-sol'
 $env:COPILOT_PROVIDER_HEADERS = 'Ocp-Apim-Subscription-Key: invalid-for-demo'
 
 copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
 ```
 
 Solicita una respuesta sencilla:
