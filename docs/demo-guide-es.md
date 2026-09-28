@@ -210,6 +210,30 @@ Puedes abrir aquí una sesión corta para verificar que la configuración BYOK r
 copilot --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
 ```
 
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
+```
+
+También puedes iniciar primero la sesión y seleccionar el modelo y el agente desde el Terminale Copilot. Escribe estos comandos en el prompt de Copilot, no en PowerShell:
+
+```text
+/model gpt-5.6-sol
+/agent squad
+```
+
+Usa `/model` para abrir el selector interactivo de modelos, `/models` como alias, o `/model --session gpt-5.6-sol` para cambiar el modelo solo en la sesión actual. Usa `/agent` para abrir el selector de agentes personalizados o `/agent squad` para activar el coordinador definido en `.github/agents/squad.agent.md`.
+
+Comprueba dentro de Copilot que el modelo y el agente activos son los esperados:
+
+```text
+/model
+/agent
+```
+
+`/agent squad` selecciona el coordinador de Squad. No selecciona directamente a `shuri`, `arcade`, `ironman`, `hulk` o `vision`; esos especialistas se incorporan al roster de Squad y se solicitan mediante instrucciones al coordinador.
+
 Cierra esta sesión de verificación con `/exit` antes de continuar. En el paso 8 ejecutarás `squad init` desde PowerShell y después iniciarás una sesión del coordinador para crear el roster.
 
 ## 8. Crear el equipo de Squad
@@ -236,6 +260,12 @@ Para crear los agentes especialistas del Squad, inicia una sesión del coordinad
 
 ```powershell
 copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
+```
+
+Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+```text
+/allow-all on
 ```
 
 Tras cargar Copilot, debes ver una pantalla como la siguiente donde el agente de Squad está activo y el modelo `gpt-5.6-sol` seleccionado.
@@ -313,7 +343,36 @@ Squad debe guardar los overrides en `.squad/config.json`. La estructura esperada
 
 No añadas un `defaultModel` que sobrescriba las preferencias individuales.
 
-## 10. Confirmar que Squad usa Foundry
+## 10. Iniciar Squad con el secreto protegido
+
+Squad lee `.squad/config.json` al arrancar. Para que los modelos asignados en el paso 9 estén activos, reinicia la sesión:
+
+1. Escribe `/exit` en el prompt de Copilot para cerrar la sesión del paso 9.
+2. Comprueba que sigues en la Terminal y que las variables no se han perdido:
+
+   ```powershell
+   $env:COPILOT_PROVIDER_BASE_URL
+   ```
+
+   Debe mostrar la URL de APIM terminada en `/openai/v1`. Si aparece vacía, la terminal es nueva: vuelve a ejecutar el bloque de preparación de la Terminal.
+
+3. Inicia la sesión definitiva de la demostración:
+
+  ```powershell
+  copilot --agent squad --model gpt-5.6-sol --secret-env-vars=COPILOT_PROVIDER_HEADERS
+  ```
+
+   Dentro del prompt de Copilot, activa las aprobaciones automáticas:
+
+   ```text
+   /allow-all on
+   ```
+
+`--secret-env-vars` evita que el valor de la clave de APIM se exponga a herramientas de shell o servidores MCP (*Model Context Protocol*) ejecutados por los agentes.
+
+Esta sesión debe permanecer abierta durante los pasos 11, 12 y 13. No la cierres para consultar Application Insights: esas consultas se hacen en el navegador.
+
+## 11. Confirmar que Squad usa Foundry
 
 Antes de pedir código, abre Application Insights en Azure Portal desde el navegador, sin tocar la Terminal:
 
