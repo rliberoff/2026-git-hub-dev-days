@@ -446,7 +446,7 @@ Hulk: crea y ejecuta pruebas para colisiones, líneas completas y puntuación.
 Vision: documenta cómo compilar y ejecutar el juego.
 ```
 
-Cuando el equipo termine, comprueba que existe una aplicación .NET compilable. Ejecuta esto en la Terminal para no cerrar la sesión de Squad:
+Cuando el equipo termine, comprueba que existe una aplicación .NET compilable. Ejecuta esto en otra Terminal para no cerrar la sesión de Squad. Busca el directorio donde Squads ha colocado el código fuente y navega hasta allí antes de ejecutar los comandos.
 
 ```powershell
 dotnet build
@@ -500,9 +500,11 @@ las colisiones, la limpieza de líneas y la puntuación. Devuelve un informe amp
 con los problemas encontrados y propuestas concretas, pero no modifiques archivos.
 ```
 
+Esto puede tardar en mostrar un error, así que para verificarlo rápidamente durante la demo puedes pasar directamente al paso 14.
+
 Si Copilot responde a la primera solicitud, envía otra petición de análisis mientras siga activa la ventana de un minuto. La política estima los tokens del prompt; cuando se supera el límite, APIM rechaza la llamada antes de enviarla a Foundry y Copilot muestra el error `429` del gateway. No cierres ni reinicies esta sesión entre las solicitudes.
 
-Mientras tanto, la sesión de Squad de la otra terminal debe continuar trabajando con `demo-inference`. Esto demuestra que el límite es por suscripción APIM y aísla el consumo de cada consumidor. No cambies el modelo ni la URL de la sesión de Squad.
+![Pantalla de Copilot con el error `429`](images/demo-guide-2.jpg)
 
 No repitas esta prueba con `demo-inference` esperando un `429` de APIM: esa suscripción está exenta de `llm-token-limit`. Si Foundry alcanza el límite propio del deployment, cambiar la suscripción no lo evita.
 
@@ -517,27 +519,6 @@ requests
 | project timestamp, name, resultCode, operation_Id
 | order by timestamp desc
 ```
-
-Después consulta los tokens aceptados:
-
-```kusto
-customMetrics
-| where timestamp > ago(30m)
-| where name in ("Total Tokens", "Prompt Tokens", "Completion Tokens")
-| extend Subscription = tostring(customDimensions["Subscription ID"]),
-         Backend = tostring(customDimensions["Backend ID"])
-| summarize Tokens = sum(valueSum) by Subscription, Backend, Metric = name
-| order by Subscription asc, Backend asc, Metric asc
-```
-
-Explica al público:
-
-- `requests.resultCode == "429"` demuestra el rechazo de APIM;
-- Los tokens de las solicitudes aceptadas aparecen en `customMetrics`, separados por suscripción;
-- `demo-ratelimit` alcanza su límite mientras `demo-inference` sigue consumiendo con normalidad;
-- El `429` no es un fallo regional;
-- El circuito de *failover* está diseñado para errores `5xx`, no para este `429`;
-- Cambiar de modelo o región no debe permitir saltarse el límite de la suscripción.
 
 ## 15. Demostrar que no existe fallback hacia GitHub Copilot
 
@@ -571,6 +552,8 @@ Responde únicamente: BYOK conectado.
 
 El resultado esperado es un error `401` o equivalente del *gateway*. Copilot no debe responder usando los modelos incluidos en la licencia.
 
+![Pantalla de Copilot con el error `401`](images/demo-guide-3.jpg)
+
 Cierra la sesión con `/exit` y **cierra por completo la Terminal**. Así garantizas que la clave inválida no se reutiliza en el resto de la demostración. Continúa en la Terminal, que conserva la clave válida.
 
 ## 16. Demostrar el failover regional
@@ -579,7 +562,7 @@ Esta prueba mantiene una ventana de failover para enviar una petición desde Cop
 
 Usa dos terminales nuevas o libres:
 
-- **Terminal de Copilot:** usa una sesión BYOK con la clave de `demo-inference`. No reutilices la Terminal de prueba del paso 12: conserva la clave de `demo-ratelimit` y puede producir un `429`. Deja la sesión de Squad inactiva durante esta prueba.
+- **Terminal de Copilot:** usa una sesión BYOK con la clave de `demo-inference`. **Crea uno nuevo, no reutilices la Terminal de pasos anteriores, como el 12**
 - **Terminal de control:** ejecuta el script con la clave de `demo-failover`. El script redirige temporalmente el *backend* primario a respuestas `503`, comprueba la región secundaria y restaura el *backend* al salir.
 
 En la Terminal de Copilot, configura BYOK e inicia una sesión nueva. Introduce tú mismo la clave, sin guardarla en archivos ni compartirla:
@@ -638,10 +621,6 @@ customMetrics
 | summarize Tokens = sum(valueSum) by Subscription, Backend
 | order by Backend asc
 ```
-
-La Terminal de control usa `demo-failover`, así que sus propias comprobaciones no aumentan la fila de `demo-inference`. La sesión de Squad debe permanecer inactiva para que la nueva actividad en esa fila corresponda a Copilot. El script mantiene la ventana durante 120 segundos y después restaura la URL original y el *circuit breaker* en `finally`. No cierres ni fuerces la terminación de la Terminal de control durante la espera: una terminación forzada puede impedir la restauración. APIM puede mantener el circuito abierto hasta dos minutos más; espera ese tiempo antes de solicitar trabajo nuevo a Squad.
-
-Contrasta este comportamiento con el del paso 12: el `429` del límite de tokens no activa el *circuit breaker*, que solo reacciona a errores `5xx` del *backend*. Al terminar, cierra la sesión nueva de Copilot con `/exit` y cierra su terminal para eliminar la clave de su proceso.
 
 ## 17. Consultar tokens por suscripción y backend
 
