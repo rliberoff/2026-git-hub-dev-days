@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/TerminalTetris/TerminalTetris.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/TerminalTetris.Tests/TerminalTetris.Tests.csproj" />
-  </Folder>
-</Solution>
