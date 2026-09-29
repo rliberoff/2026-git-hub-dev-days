@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "stateBackend": "local",
+  "agentModelOverrides": {
+    "shuri": "gpt-5.6-sol",
+    "arcade": "gpt-5.6-terra",
+    "ironman": "gpt-5.6-terra",
+    "hulk": "gpt-5.6-terra",
+    "vision": "gpt-5.6-luna"
+  }
+}
