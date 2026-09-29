@@ -1,0 +1,11 @@
+name: squad-apim-foundry-demo
+
+infra:
+  provider: terraform
+  layers:
+    - name: backend
+      path: ./infra/backend
+    - name: resources
+      path: ./infra/resources
+      dependsOn:
+        - backend

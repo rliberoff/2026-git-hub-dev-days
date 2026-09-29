@@ -474,6 +474,9 @@ terraform.rc
 backend.tfvars
 terraform.tfvars
 
+# Azure Developer CLI local environments
+.azure/
+
 ##################################################################################
 # Following settings are for Microsoft Agent Package Manager (APM)
 # Reference: https://microsoft.github.io/apm/consumer/install-packages/#what-to-commit
@@ -484,3 +487,20 @@ terraform.tfvars
 
 # APM dependencies
 apm_modules/
+
+##################################################################################
+# Following settings are for Squads
+# Reference: https://github.com/bradygaster/squad
+##################################################################################
+
+# Squad: ignore runtime state (logs, inbox, sessions)
+# Note: .squad/casting/* is identity and MUST be committed to main, not ignored
+.squad/orchestration-log/
+.squad/log/
+.squad/decisions/inbox/
+.squad/sessions/
+.squad/.scratch/
+.squad/.cache/
+
+# Squad: SubSquad activation file (local to this machine)
+.squad-workstream
